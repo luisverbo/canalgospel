@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@canal-gospel/supabase'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { Badge } from '@canal-gospel/ui'
 import { DevotionalForm } from './DevotionalForm'
 

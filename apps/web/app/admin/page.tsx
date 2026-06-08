@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@canal-gospel/supabase'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 
 export default async function AdminDashboardPage() {
   const supabase = await createServerSupabaseClient()

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@canal-gospel/supabase'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { StudyEditorForm } from './StudyEditorForm'
 
