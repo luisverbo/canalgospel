@@ -7,49 +7,50 @@ export default async function ConteudoPage() {
 
   const { data: studies } = await supabase
     .from('studies')
-    .select('*, preachers(name, slug), categories(name)')
-    .eq('status', 'pending_review')
-    .order('created_at', { ascending: true })
+    .select('id, title, slug, body, youtube_url, status, read_time_min, created_at, preacher_id, preachers(display_name), categories(name)')
+    .in('status', ['pending', 'draft'])
+    .order('created_at', { ascending: false })
 
   return (
     <div>
       <h1 className="text-2xl font-bold text-[#2E2860] mb-2">Moderação de Conteúdo</h1>
       <p className="text-[#8A8797] mb-6">
-        {studies?.length ?? 0} estudo{studies?.length !== 1 ? 's' : ''} aguardando revisão.
+        {studies?.length ?? 0} estudo{studies?.length !== 1 ? 's' : ''} aguardando aprovação.
       </p>
 
       <div className="flex flex-col gap-4">
         {studies?.map((study) => (
-          <div
-            key={study.id}
-            className="bg-white rounded-2xl border border-[#1E1B2E]/8 p-5"
-          >
+          <div key={study.id} className="bg-white rounded-2xl border border-[#1E1B2E]/8 p-5">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <Badge variant="gold">Pendente</Badge>
                   {study.categories && (
                     <Badge variant="neutral">
                       {(study.categories as { name: string }).name}
                     </Badge>
                   )}
+                  {study.youtube_url && (
+                    <Badge variant="indigo">Vídeo YouTube</Badge>
+                  )}
                 </div>
-                <h3 className="font-semibold text-[#1E1B2E] text-lg mb-1">
-                  {study.title}
-                </h3>
-                <p className="text-sm text-[#8A8797] mb-2">
-                  Por {(study.preachers as { name: string } | null)?.name} ·{' '}
-                  {study.read_time_minutes} min de leitura
+                <h3 className="font-semibold text-[#1E1B2E] text-base mb-1 truncate">{study.title}</h3>
+                <p className="text-sm text-[#8A8797]">
+                  {(study.preachers as { display_name: string } | null)?.display_name ?? 'Sem pregador'}
+                  {study.read_time_min ? ` · ${study.read_time_min} min` : ''}
                 </p>
-                {study.summary && (
-                  <p className="text-sm text-[#8A8797] line-clamp-2">{study.summary}</p>
+                {study.youtube_url && (
+                  <a href={study.youtube_url} target="_blank" rel="noopener noreferrer"
+                    className="text-xs text-[#2E2860] underline mt-1 inline-block">
+                    Ver vídeo no YouTube ↗
+                  </a>
                 )}
               </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-[#1E1B2E]/5 line-clamp-4 text-sm text-[#1E1B2E] leading-relaxed">
-              <div dangerouslySetInnerHTML={{ __html: study.body.slice(0, 500) + '...' }} />
-            </div>
+            {study.body && (
+              <p className="mt-3 text-sm text-[#8A8797] line-clamp-2">{study.body.slice(0, 200)}</p>
+            )}
 
             <div className="mt-4">
               <StudyModerationActions studyId={study.id} preacherId={study.preacher_id} />
