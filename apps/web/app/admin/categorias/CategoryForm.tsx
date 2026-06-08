@@ -4,21 +4,15 @@ import { createClient } from '@canal-gospel/supabase'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+const emptyForm = { name: '', slug: '', kind: 'tema' as 'tema' | 'livro' | 'ocasiao', sort_order: 0 }
+
 export function CategoryForm() {
   const supabase = createClient()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [form, setForm] = useState({
-    name: '',
-    slug: '',
-    description: '',
-    icon: '',
-    type: 'theme' as 'theme' | 'occasion' | 'book',
-    sort_order: 0,
-    active: true,
-  })
+  const [form, setForm] = useState(emptyForm)
 
-  const set = (key: string, value: string | number | boolean) =>
+  const set = (key: string, value: string | number) =>
     setForm((f) => ({ ...f, [key]: value }))
 
   const handleNameChange = (name: string) => {
@@ -34,9 +28,14 @@ export function CategoryForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    await supabase.from('categories').insert(form)
+    await supabase.from('categories').insert({
+      name: form.name,
+      slug: form.slug,
+      kind: form.kind,
+      sort_order: form.sort_order,
+    })
     router.refresh()
-    setForm({ name: '', slug: '', description: '', icon: '', type: 'theme', sort_order: 0, active: true })
+    setForm(emptyForm)
     setLoading(false)
   }
 
@@ -53,15 +52,11 @@ export function CategoryForm() {
         <input required value={form.slug} onChange={(e) => set('slug', e.target.value)} className={inputCls} placeholder="casamento" />
       </div>
       <div>
-        <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">Ícone (emoji)</label>
-        <input value={form.icon} onChange={(e) => set('icon', e.target.value)} className={inputCls} placeholder="💍" maxLength={4} />
-      </div>
-      <div>
         <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">Tipo</label>
-        <select value={form.type} onChange={(e) => set('type', e.target.value)} className={inputCls}>
-          <option value="theme">Tema</option>
-          <option value="occasion">Ocasião</option>
-          <option value="book">Livro Bíblico</option>
+        <select value={form.kind} onChange={(e) => set('kind', e.target.value)} className={inputCls}>
+          <option value="tema">Tema</option>
+          <option value="ocasiao">Ocasião</option>
+          <option value="livro">Livro Bíblico</option>
         </select>
       </div>
       <div>
