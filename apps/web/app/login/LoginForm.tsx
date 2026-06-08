@@ -28,8 +28,13 @@ export function LoginForm() {
       return
     }
 
-    router.refresh()
-    router.push('/')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setLoading(false); return }
+    const { data: profile } = await supabase
+      .from('profiles').select('role').eq('id', user.id).single()
+    if (profile?.role === 'admin') router.push('/admin')
+    else if (profile?.role === 'preacher') router.push('/parceiro')
+    else router.push('/admin')
   }
 
   return (
