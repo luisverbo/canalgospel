@@ -1,5 +1,4 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { Badge } from '@canal-gospel/ui'
 import { DevotionalForm } from './DevotionalForm'
 
 export default async function DevocionalPage() {
@@ -7,8 +6,8 @@ export default async function DevocionalPage() {
 
   const { data: devotionals } = await supabase
     .from('daily_devotionals')
-    .select('*')
-    .order('scheduled_date', { ascending: false })
+    .select('id, date, verse_ref, verse_text, reflection, youtube_url')
+    .order('date', { ascending: false })
     .limit(30)
 
   return (
@@ -22,7 +21,7 @@ export default async function DevocionalPage() {
         </div>
 
         <div>
-          <h2 className="font-semibold text-[#1E1B2E] mb-4">Programados</h2>
+          <h2 className="font-semibold text-[#1E1B2E] mb-4">Devocionais</h2>
           <div className="flex flex-col gap-3">
             {devotionals?.map((d) => (
               <div
@@ -30,18 +29,23 @@ export default async function DevocionalPage() {
                 className="bg-white rounded-2xl border border-[#1E1B2E]/8 p-4"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
-                    <p className="font-medium text-[#1E1B2E] text-sm">{d.title}</p>
-                    <p className="text-xs text-[#8A8797] mt-0.5">{d.verse_reference}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-[#1E1B2E] text-sm">{d.verse_ref}</p>
+                    <p className="text-xs text-[#8A8797] mt-0.5 line-clamp-2">{d.verse_text}</p>
+                    {d.youtube_url && (
+                      <a
+                        href={d.youtube_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-[#2E2860] underline mt-0.5 block truncate"
+                      >
+                        YouTube
+                      </a>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant={d.published ? 'green' : 'neutral'}>
-                      {d.published ? 'Publicado' : 'Rascunho'}
-                    </Badge>
-                    <span className="text-xs text-[#8A8797]">
-                      {new Date(d.scheduled_date).toLocaleDateString('pt-BR')}
-                    </span>
-                  </div>
+                  <span className="text-xs text-[#8A8797] shrink-0">
+                    {new Date(d.date + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  </span>
                 </div>
               </div>
             ))}

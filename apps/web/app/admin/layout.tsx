@@ -10,6 +10,7 @@ const navItems = [
   { href: '/admin/devocional', label: 'Devocional', icon: '📿' },
   { href: '/admin/categorias', label: 'Categorias', icon: '🏷' },
   { href: '/admin/whatsapp', label: 'WhatsApp', icon: '💬' },
+  { href: '/admin/youtube-import', label: 'Importar YouTube', icon: '▶️' },
 ]
 
 export default async function AdminLayout({
