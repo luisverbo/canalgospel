@@ -5,11 +5,14 @@ import { StudyModerationActions } from './StudyModerationActions'
 export default async function ConteudoPage() {
   const supabase = await createServerSupabaseClient()
 
-  const { data: studies } = await supabase
-    .from('studies')
-    .select('id, title, slug, body, youtube_url, status, read_time_min, created_at, preacher_id, preachers(display_name), categories(name)')
-    .in('status', ['pending', 'draft'])
-    .order('created_at', { ascending: false })
+  const [{ data: studies }, { data: categories }] = await Promise.all([
+    supabase
+      .from('studies')
+      .select('id, title, body, youtube_url, status, read_time_min, created_at, preacher_id, category_id, preachers(display_name), categories(name)')
+      .in('status', ['pending', 'draft'])
+      .order('created_at', { ascending: false }),
+    supabase.from('categories').select('id, name').order('name'),
+  ])
 
   return (
     <div>
@@ -21,39 +24,38 @@ export default async function ConteudoPage() {
       <div className="flex flex-col gap-4">
         {studies?.map((study) => (
           <div key={study.id} className="bg-white rounded-2xl border border-[#1E1B2E]/8 p-5">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <Badge variant="gold">Pendente</Badge>
-                  {study.categories && (
-                    <Badge variant="neutral">
-                      {(study.categories as { name: string }).name}
-                    </Badge>
-                  )}
-                  {study.youtube_url && (
-                    <Badge variant="indigo">Vídeo YouTube</Badge>
-                  )}
+                  {study.categories
+                    ? <Badge variant="neutral">{(study.categories as { name: string }).name}</Badge>
+                    : <Badge variant="red">Sem categoria</Badge>
+                  }
+                  {study.youtube_url && <Badge variant="indigo">YouTube</Badge>}
                 </div>
-                <h3 className="font-semibold text-[#1E1B2E] text-base mb-1 truncate">{study.title}</h3>
+                <h3 className="font-semibold text-[#1E1B2E] mb-1 line-clamp-2">{study.title}</h3>
                 <p className="text-sm text-[#8A8797]">
                   {(study.preachers as { display_name: string } | null)?.display_name ?? 'Sem pregador'}
-                  {study.read_time_min ? ` · ${study.read_time_min} min` : ''}
                 </p>
                 {study.youtube_url && (
                   <a href={study.youtube_url} target="_blank" rel="noopener noreferrer"
                     className="text-xs text-[#2E2860] underline mt-1 inline-block">
-                    Ver vídeo no YouTube ↗
+                    Ver vídeo ↗
                   </a>
+                )}
+                {study.body && (
+                  <p className="text-sm text-[#8A8797] mt-2 line-clamp-2">{study.body.slice(0, 200)}</p>
                 )}
               </div>
             </div>
 
-            {study.body && (
-              <p className="mt-3 text-sm text-[#8A8797] line-clamp-2">{study.body.slice(0, 200)}</p>
-            )}
-
             <div className="mt-4">
-              <StudyModerationActions studyId={study.id} preacherId={study.preacher_id} />
+              <StudyModerationActions
+                studyId={study.id}
+                categoryId={study.category_id}
+                categories={categories ?? []}
+              />
             </div>
           </div>
         ))}
