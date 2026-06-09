@@ -95,7 +95,12 @@ export function YouTubeImportForm({ preachers, categories: _categories }: Props)
                 </p>
               )}
               {result.errors.length > 0 && (
-                <p className="text-red-600 text-sm mt-0.5">{result.errors.length} erro(s) na importação</p>
+                <div className="mt-2">
+                  <p className="text-red-600 text-sm font-medium">{result.errors.length} erro(s) na importação:</p>
+                  <ul className="text-red-600 text-xs mt-1 space-y-0.5 list-disc list-inside max-h-32 overflow-y-auto">
+                    {result.errors.map((e, i) => <li key={i}>{e}</li>)}
+                  </ul>
+                </div>
               )}
             </div>
             <button
