@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { approveStudy, rejectStudy, setCategoryAction } from './actions'
+import { approveStudy, rejectStudy, unpublishStudy, setCategoryAction } from './actions'
 
 interface Category { id: string; name: string }
 
@@ -9,25 +9,20 @@ export function StudyModerationActions({
   studyId,
   categoryId,
   categories,
+  currentStatus,
 }: {
   studyId: string
   categoryId: string | null
   categories: Category[]
+  currentStatus: string
 }) {
   const [loading, setLoading] = useState(false)
   const [rejecting, setRejecting] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(categoryId ?? '')
 
-  const handleApprove = async () => {
+  const run = async (fn: () => Promise<void>) => {
     setLoading(true)
-    await approveStudy(studyId)
-    setLoading(false)
-  }
-
-  const handleReject = async () => {
-    setLoading(true)
-    await rejectStudy(studyId)
-    setRejecting(false)
+    await fn()
     setLoading(false)
   }
 
@@ -55,29 +50,52 @@ export function StudyModerationActions({
         </div>
       )}
 
-      {/* Actions */}
-      {rejecting ? (
-        <div className="flex gap-2">
-          <button onClick={handleReject} disabled={loading}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
-            {loading ? 'Rejeitando...' : 'Confirmar Rejeição'}
-          </button>
-          <button onClick={() => setRejecting(false)}
-            className="px-4 py-2 bg-[#1E1B2E]/5 text-[#8A8797] rounded-lg text-sm">
-            Cancelar
-          </button>
-        </div>
-      ) : (
+      {currentStatus === 'pending' && (
+        rejecting ? (
+          <div className="flex gap-2">
+            <button onClick={() => run(() => rejectStudy(studyId))} disabled={loading}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+              {loading ? 'Rejeitando...' : 'Confirmar Rejeição'}
+            </button>
+            <button onClick={() => setRejecting(false)}
+              className="px-4 py-2 bg-[#1E1B2E]/5 text-[#8A8797] rounded-lg text-sm">
+              Cancelar
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-3">
+            <button onClick={() => run(() => approveStudy(studyId))} disabled={loading}
+              className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50">
+              {loading ? '...' : '✓ Aprovar'}
+            </button>
+            <button onClick={() => setRejecting(true)} disabled={loading}
+              className="px-5 py-2 bg-red-50 text-red-700 rounded-xl text-sm font-semibold hover:bg-red-100 transition-colors disabled:opacity-50">
+              ✗ Rejeitar
+            </button>
+          </div>
+        )
+      )}
+
+      {currentStatus === 'published' && (
         <div className="flex gap-3">
-          <button onClick={handleApprove} disabled={loading}
-            className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50">
-            {loading ? '...' : '✓ Aprovar'}
-          </button>
-          <button onClick={() => setRejecting(true)} disabled={loading}
-            className="px-5 py-2 bg-red-50 text-red-700 rounded-xl text-sm font-semibold hover:bg-red-100 transition-colors disabled:opacity-50">
-            ✗ Rejeitar
+          <button onClick={() => run(() => unpublishStudy(studyId))} disabled={loading}
+            className="px-5 py-2 bg-amber-50 text-amber-700 rounded-xl text-sm font-semibold hover:bg-amber-100 transition-colors disabled:opacity-50">
+            {loading ? '...' : '↩ Despublicar'}
           </button>
         </div>
+      )}
+
+      {currentStatus === 'rejected' && (
+        <div className="flex gap-3">
+          <button onClick={() => run(() => approveStudy(studyId))} disabled={loading}
+            className="px-5 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-sm font-semibold hover:bg-emerald-100 transition-colors disabled:opacity-50">
+            {loading ? '...' : '✓ Aprovar mesmo assim'}
+          </button>
+        </div>
+      )}
+
+      {currentStatus === 'draft' && (
+        <span className="text-xs text-[#8A8797] py-2">Rascunho</span>
       )}
     </div>
   )

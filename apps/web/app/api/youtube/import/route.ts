@@ -13,12 +13,18 @@ function slugify(text: string): string {
     .slice(0, 80)
 }
 
-interface Category {
-  id: string
-  name: string
-  slug: string
-  kind: string
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
 }
+
+interface Category { id: string; name: string; slug: string; kind: string }
 
 async function categorizeWithClaude(
   title: string,
@@ -61,6 +67,41 @@ Responda APENAS com o slug da categoria mais adequada. Se nenhuma categoria se e
   } catch {
     return null
   }
+}
+
+async function getOrCreateCanalGospelPreacher(supabase: Awaited<ReturnType<typeof createAdminSupabaseClient>>): Promise<string | null> {
+  // Look for existing Canal Gospel preacher
+  const { data: existing } = await supabase
+    .from('preachers')
+    .select('id')
+    .eq('slug', 'canal-gospel')
+    .maybeSingle()
+
+  if (existing) return existing.id
+
+  // Try to find an admin profile to attach to
+  const { data: adminProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('role', 'admin')
+    .limit(1)
+    .maybeSingle()
+
+  if (!adminProfile) return null
+
+  const { data: created } = await supabase
+    .from('preachers')
+    .insert({
+      id: adminProfile.id,
+      display_name: 'Canal Gospel',
+      slug: 'canal-gospel',
+      bio: 'Conteúdo curado pelo Canal Gospel',
+      status: 'active',
+    })
+    .select('id')
+    .single()
+
+  return created?.id ?? null
 }
 
 export async function POST(req: NextRequest) {
@@ -106,6 +147,9 @@ export async function POST(req: NextRequest) {
   const supabase = await createAdminSupabaseClient()
   const { data: categories } = await supabase.from('categories').select('id, name, slug, kind')
 
+  // Determine preacher: use provided, or fall back to Canal Gospel profile
+  const effectivePreacherId = preacherId || await getOrCreateCanalGospelPreacher(supabase)
+
   const results: Array<{
     videoId: string
     title: string
@@ -119,8 +163,10 @@ export async function POST(req: NextRequest) {
   for (const item of items) {
     const videoId = item.id?.videoId
     if (!videoId) continue
-    const title = item.snippet?.title ?? ''
-    const description = item.snippet?.description ?? ''
+    const rawTitle = item.snippet?.title ?? ''
+    const rawDescription = item.snippet?.description ?? ''
+    const title = decodeHtmlEntities(rawTitle)
+    const description = decodeHtmlEntities(rawDescription)
     const category_id = await categorizeWithClaude(title, description, categories ?? [])
     const slug = `${slugify(title)}-${Math.random().toString(36).slice(2, 6)}`
     results.push({
@@ -130,11 +176,10 @@ export async function POST(req: NextRequest) {
       category_id,
       categorized: !!category_id,
       slug,
-      body: description,
+      body: description || ' ',
     })
   }
 
-  // Insert all as 'pending' — admin approves before going to app
   const errors: string[] = []
   let imported = 0
 
@@ -143,10 +188,10 @@ export async function POST(req: NextRequest) {
       title: r.title,
       slug: r.slug,
       youtube_url: r.youtube_url,
-      body: r.body || ' ',
-      preacher_id: preacherId || null,
+      body: r.body,
+      preacher_id: effectivePreacherId,
       category_id: r.category_id,
-      status: 'pending_review',
+      status: 'pending',
     })
     if (error) errors.push(`"${r.title}": ${error.message}`)
     else imported++
