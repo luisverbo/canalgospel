@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
       body: r.body,
       preacher_id: preacherId || null,
       category_id: r.category_id,
-      status: 'pending',
+      status: 'pending_review',
     })
     if (error) errors.push(`"${r.title}": ${error.message}`)
     else imported++
