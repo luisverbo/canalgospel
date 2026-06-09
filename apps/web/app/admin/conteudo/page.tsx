@@ -1,6 +1,7 @@
 import { createAdminSupabaseClient } from '@/lib/supabase/server'
 import { Badge } from '@canal-gospel/ui'
 import { StudyModerationActions } from './StudyModerationActions'
+import Link from 'next/link'
 
 export default async function ConteudoPage() {
   const supabase = await createAdminSupabaseClient()
@@ -18,7 +19,13 @@ export default async function ConteudoPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-[#2E2860] mb-2">Moderação de Conteúdo</h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-2xl font-bold text-[#2E2860]">Moderação de Conteúdo</h1>
+        <Link href="/admin/conteudo/novo"
+          className="px-4 py-2 bg-[#2E2860] text-white rounded-xl text-sm font-semibold hover:bg-[#3D3580] transition-colors">
+          + Novo Conteúdo
+        </Link>
+      </div>
       <p className="text-[#8A8797] mb-6">
         {studies?.length ?? 0} estudo{studies?.length !== 1 ? 's' : ''} aguardando aprovação.
       </p>
