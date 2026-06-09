@@ -5,7 +5,7 @@ import { StudyModerationActions } from './StudyModerationActions'
 export default async function ConteudoPage() {
   const supabase = await createServerSupabaseClient()
 
-  const [{ data: studies }, { data: categories }] = await Promise.all([
+  const [studiesResult, { data: categories }] = await Promise.all([
     supabase
       .from('studies')
       .select('id, title, body, youtube_url, status, created_at, preacher_id, category_id, preachers(display_name), categories(name)')
@@ -13,6 +13,8 @@ export default async function ConteudoPage() {
       .order('created_at', { ascending: false }),
     supabase.from('categories').select('id, name').order('name'),
   ])
+  const studies = studiesResult.data
+  const studiesError = studiesResult.error
 
   return (
     <div>
@@ -60,7 +62,12 @@ export default async function ConteudoPage() {
           </div>
         ))}
 
-        {!studies?.length && (
+        {studiesError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm font-mono">
+            Erro ao carregar: {studiesError.message} | code: {studiesError.code}
+          </div>
+        )}
+        {!studies?.length && !studiesError && (
           <div className="text-center py-16 bg-white rounded-2xl border border-[#1E1B2E]/8">
             <p className="text-4xl mb-3">✅</p>
             <p className="text-[#8A8797]">Nenhum conteúdo pendente de revisão.</p>
