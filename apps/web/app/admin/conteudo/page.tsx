@@ -8,7 +8,7 @@ export default async function ConteudoPage() {
   const [{ data: studies }, { data: categories }] = await Promise.all([
     supabase
       .from('studies')
-      .select('id, title, body, youtube_url, status, read_time_min, created_at, preacher_id, category_id, preachers(display_name), categories(name)')
+      .select('id, title, body, youtube_url, status, created_at, preacher_id, category_id, preachers(display_name), categories(name)')
       .in('status', ['pending_review', 'draft'])
       .order('created_at', { ascending: false }),
     supabase.from('categories').select('id, name').order('name'),

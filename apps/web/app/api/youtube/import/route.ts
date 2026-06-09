@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
       title: r.title,
       slug: r.slug,
       youtube_url: r.youtube_url,
-      body: r.body,
+      body: r.body || ' ',
       preacher_id: preacherId || null,
       category_id: r.category_id,
       status: 'pending_review',
