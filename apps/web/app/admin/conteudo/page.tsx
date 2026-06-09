@@ -1,9 +1,9 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createAdminSupabaseClient } from '@/lib/supabase/server'
 import { Badge } from '@canal-gospel/ui'
 import { StudyModerationActions } from './StudyModerationActions'
 
 export default async function ConteudoPage() {
-  const supabase = await createServerSupabaseClient()
+  const supabase = await createAdminSupabaseClient()
 
   const [studiesResult, { data: categories }] = await Promise.all([
     supabase
