@@ -41,24 +41,16 @@ export default async function ParceiroDashboardPage() {
 
   const { data: studies } = await supabase
     .from('studies')
-    .select('id, title, status, published_at, created_at')
+    .select('id, title, status, view_count, published_at, created_at')
     .eq('preacher_id', preacher.id)
     .order('created_at', { ascending: false })
 
   const all = studies ?? []
-  const publishedIds = all.filter((s) => s.status === 'published').map((s) => s.id)
-  const publishedCount = publishedIds.length
+  const publishedCount = all.filter((s) => s.status === 'published').length
   const pendingCount = all.filter((s) => s.status === 'pending').length
-
-  // Métrica de engajamento: salvamentos (favoritos) dos meus estudos publicados
-  let savesCount = 0
-  if (publishedIds.length) {
-    const { count } = await supabase
-      .from('favorites')
-      .select('id', { count: 'exact', head: true })
-      .in('study_id', publishedIds)
-    savesCount = count ?? 0
-  }
+  const totalViews = all
+    .filter((s) => s.status === 'published')
+    .reduce((sum, s) => sum + (s.view_count ?? 0), 0)
 
   const recent = all.slice(0, 5)
 
@@ -92,8 +84,8 @@ export default async function ParceiroDashboardPage() {
           <p className="text-xs text-[#8A8797] mt-1">Em Revisão</p>
         </div>
         <div className="bg-white rounded-2xl border border-[#1E1B2E]/8 p-5 text-center">
-          <p className="text-3xl font-bold text-[#2E2860]">{savesCount.toLocaleString('pt-BR')}</p>
-          <p className="text-xs text-[#8A8797] mt-1">Salvamentos</p>
+          <p className="text-3xl font-bold text-[#2E2860]">{totalViews.toLocaleString('pt-BR')}</p>
+          <p className="text-xs text-[#8A8797] mt-1">Leituras</p>
         </div>
       </div>
 

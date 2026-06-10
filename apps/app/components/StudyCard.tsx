@@ -32,40 +32,41 @@ export function StudyCard({ study, preacher, category }: StudyCardProps) {
     (study.youtube_url ? youTubeThumb(study.youtube_url) : '') ||
     extractFirstImage(study.body)
 
-  const metaParts = [
-    preacher ? decodeHtml(preacher.display_name) : null,
-    study.read_time_min ? `${study.read_time_min} min` : null,
-  ].filter(Boolean)
-
   return (
-    <Link href={`/studies/${study.slug}`}>
-      <div className="flex items-center gap-3 bg-white dark:bg-[#211E2D] rounded-2xl p-3 border border-[#1E1B2E]/7 dark:border-white/7 active:scale-[0.98] transition-transform">
-        <div className="h-16 w-24 shrink-0 rounded-xl overflow-hidden">
-          {thumb ? (
-            <img src={thumb} alt={decodeHtml(study.title)} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full bg-[#2E2860] dark:bg-[#2E2860]/80 flex items-center justify-center">
-              <BookOpen size={22} className="text-white/70" strokeWidth={1.5} />
-            </div>
-          )}
-        </div>
+    <div className="flex items-center gap-3 bg-white dark:bg-[#211E2D] rounded-2xl p-3 border border-[#1E1B2E]/7 dark:border-white/7">
+      <Link href={`/studies/${study.slug}`} className="h-16 w-24 shrink-0 rounded-xl overflow-hidden active:scale-[0.98] transition-transform">
+        {thumb ? (
+          <img src={thumb} alt={decodeHtml(study.title)} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-[#2E2860] dark:bg-[#2E2860]/80 flex items-center justify-center">
+            <BookOpen size={22} className="text-white/70" strokeWidth={1.5} />
+          </div>
+        )}
+      </Link>
 
-        <div className="flex-1 min-w-0">
-          {category && (
-            <span className="inline-block text-[10px] font-semibold text-[#2E2860] dark:text-[#B5B0D8] bg-[#EDEAF6] dark:bg-[#2E2860]/40 px-2 py-0.5 rounded-full mb-1">
-              {decodeHtml(category.name)}
-            </span>
-          )}
+      <div className="flex-1 min-w-0">
+        {category && (
+          <span className="inline-block text-[10px] font-semibold text-[#2E2860] dark:text-[#B5B0D8] bg-[#EDEAF6] dark:bg-[#2E2860]/40 px-2 py-0.5 rounded-full mb-1">
+            {decodeHtml(category.name)}
+          </span>
+        )}
+        <Link href={`/studies/${study.slug}`}>
           <h3 className="font-medium text-sm text-[#1E1B2E] dark:text-[#F3F1FA] leading-snug line-clamp-2">
             {decodeHtml(study.title)}
           </h3>
-          {metaParts.length > 0 && (
-            <p className="text-[11px] text-[#8A8797] dark:text-white/40 mt-1 truncate">{metaParts.join(' · ')}</p>
-          )}
-        </div>
-
-        <BookmarkButton studyId={study.id} />
+        </Link>
+        <p className="text-[11px] text-[#8A8797] dark:text-white/40 mt-1 truncate">
+          {preacher ? (
+            <Link href={`/profile/${preacher.slug}`} className="hover:underline font-medium text-[#2E2860] dark:text-[#B5B0D8]">
+              {decodeHtml(preacher.display_name)}
+            </Link>
+          ) : null}
+          {preacher && study.read_time_min ? ' · ' : ''}
+          {study.read_time_min ? `${study.read_time_min} min` : ''}
+        </p>
       </div>
-    </Link>
+
+      <BookmarkButton studyId={study.id} />
+    </div>
   )
 }

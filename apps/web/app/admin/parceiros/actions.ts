@@ -75,10 +75,17 @@ export async function createPartner(formData: FormData): Promise<CreatePartnerRe
 
   const userId = created.user.id
 
-  // 2) cria/atualiza profile com role 'partner'
-  const { error: profileError } = await supabase
+  // 2) cria/atualiza profile com role 'preacher'
+  //    (fallback p/ 'partner' caso o enum da coluna ainda não tenha 'preacher')
+  let { error: profileError } = await supabase
     .from('profiles')
-    .upsert({ id: userId, email, full_name: displayName, role: 'partner' })
+    .upsert({ id: userId, email, full_name: displayName, role: 'preacher' })
+  if (profileError) {
+    const retry = await supabase
+      .from('profiles')
+      .upsert({ id: userId, email, full_name: displayName, role: 'partner' })
+    profileError = retry.error
+  }
   if (profileError) {
     // rollback do auth para não deixar usuário órfão
     await supabase.auth.admin.deleteUser(userId)

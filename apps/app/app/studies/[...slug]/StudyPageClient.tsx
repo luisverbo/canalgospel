@@ -35,7 +35,14 @@ export function StudyPageClient() {
       .maybeSingle()
       .then(({ data }) => {
         if (!data) setNotFound404(true)
-        else setStudy(data as Study)
+        else {
+          setStudy(data as Study)
+          // registra leitura (best-effort; ignora falha caso a função não exista ainda)
+          supabase.rpc('increment_study_view', { p_study_id: (data as Study).id }).then(
+            () => {},
+            () => {},
+          )
+        }
         setLoading(false)
       })
   }, [slug, resolved])

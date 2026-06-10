@@ -26,6 +26,7 @@ export function PreacherProfileClient() {
 
   const [preacher, setPreacher] = useState<PreacherRow | null>(null)
   const [studies, setStudies] = useState<StudyCardType[]>([])
+  const [totalViews, setTotalViews] = useState(0)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
 
@@ -44,12 +45,14 @@ export function PreacherProfileClient() {
         setPreacher(preacherData as PreacherRow)
         const { data: studiesData } = await supabase
           .from('studies')
-          .select('id, title, slug, body, youtube_url, cover_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
+          .select('id, title, slug, body, youtube_url, cover_url, view_count, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
           .eq('status', 'published')
           .eq('preacher_id', (preacherData as PreacherRow).id)
           .order('published_at', { ascending: false })
           .limit(50)
-        setStudies((studiesData as StudyCardType[] | null) ?? [])
+        const list = (studiesData as (StudyCardType & { view_count?: number })[] | null) ?? []
+        setStudies(list)
+        setTotalViews(list.reduce((sum, s) => sum + (s.view_count ?? 0), 0))
         setLoading(false)
       })
   }, [slug, resolved])
@@ -94,10 +97,14 @@ export function PreacherProfileClient() {
             {preacher.city && <p className="text-white/50 text-xs">{preacher.city}</p>}
           </div>
         </div>
-        <div className="mt-5">
-          <div className="text-center inline-block">
+        <div className="mt-5 flex gap-8">
+          <div className="text-center">
             <p className="text-xl font-bold text-[#E0A943]">{studies.length}</p>
             <p className="text-xs text-white/60">Estudos</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xl font-bold text-[#E0A943]">{totalViews.toLocaleString('pt-BR')}</p>
+            <p className="text-xs text-white/60">Leituras</p>
           </div>
         </div>
       </div>

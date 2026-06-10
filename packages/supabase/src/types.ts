@@ -15,7 +15,7 @@ export interface Database {
           email: string
           full_name: string | null
           avatar_url: string | null
-          role: 'user' | 'partner' | 'admin'
+          role: 'user' | 'partner' | 'preacher' | 'admin'
           created_at: string
           updated_at: string
         }
@@ -24,7 +24,7 @@ export interface Database {
           email: string
           full_name?: string | null
           avatar_url?: string | null
-          role?: 'user' | 'partner' | 'admin'
+          role?: 'user' | 'partner' | 'preacher' | 'admin'
           created_at?: string
           updated_at?: string
         }
@@ -33,7 +33,7 @@ export interface Database {
           email?: string
           full_name?: string | null
           avatar_url?: string | null
-          role?: 'user' | 'partner' | 'admin'
+          role?: 'user' | 'partner' | 'preacher' | 'admin'
           created_at?: string
           updated_at?: string
         }
@@ -135,6 +135,7 @@ export interface Database {
           cover_url: string | null
           content_type: string | null
           read_time_min: number | null
+          view_count: number
           status: 'draft' | 'pending' | 'published' | 'rejected'
           is_featured: boolean
           featured_until: string | null
@@ -153,6 +154,7 @@ export interface Database {
           cover_url?: string | null
           content_type?: string | null
           read_time_min?: number | null
+          view_count?: number
           status?: 'draft' | 'pending' | 'published' | 'rejected'
           is_featured?: boolean
           featured_until?: string | null
@@ -171,6 +173,7 @@ export interface Database {
           cover_url?: string | null
           content_type?: string | null
           read_time_min?: number | null
+          view_count?: number
           status?: 'draft' | 'pending' | 'published' | 'rejected'
           is_featured?: boolean
           featured_until?: string | null
@@ -490,7 +493,10 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_study_view: {
+        Args: { p_study_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
