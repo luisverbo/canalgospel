@@ -1,36 +1,36 @@
 import { createClient } from '@canal-gospel/supabase'
-import { Badge } from '@canal-gospel/ui'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { StudyReader } from './StudyReader'
+
+interface Study {
+  id: string
+  title: string
+  slug: string
+  body: string | null
+  youtube_url: string | null
+  read_time_min: number | null
+  published_at: string | null
+  preachers: { display_name: string; slug: string; photo_url: string | null; church: string | null; city: string | null } | null
+  categories: { name: string; slug: string } | null
+}
 
 export default async function StudyPage({
   params,
 }: {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }) {
+  const { slug } = await params
   const supabase = createClient()
 
-  const { data: study } = await supabase
+  const { data } = await supabase
     .from('studies')
-    .select('*, preachers(name, slug, photo_url, church, city), categories(name, slug)')
-    .eq('slug', params.slug)
+    .select('id, title, slug, body, youtube_url, read_time_min, published_at, preachers(display_name, slug, photo_url, church, city), categories(name, slug)')
+    .eq('slug', slug)
     .eq('status', 'published')
-    .single()
+    .maybeSingle()
 
+  const study = data as Study | null
   if (!study) notFound()
 
-  const preacher = study.preachers as {
-    name: string
-    slug: string
-    photo_url: string | null
-    church: string | null
-    city: string | null
-  } | null
-
-  const category = study.categories as { name: string; slug: string } | null
-
-  return (
-    <StudyReader study={study} preacher={preacher} category={category} />
-  )
+  return <StudyReader study={study} preacher={study.preachers} category={study.categories} />
 }

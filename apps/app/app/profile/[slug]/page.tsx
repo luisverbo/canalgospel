@@ -1,78 +1,77 @@
 import { createClient } from '@canal-gospel/supabase'
 import { StudyCard } from '@/components/StudyCard'
-import { Badge } from '@canal-gospel/ui'
+import type { StudyCard as StudyCardType } from '@/lib/types'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { PixButton } from './PixButton'
 
+interface PreacherRow {
+  id: string
+  display_name: string
+  slug: string
+  bio: string | null
+  church: string | null
+  city: string | null
+  photo_url: string | null
+  instagram: string | null
+  whatsapp: string | null
+  pix_key: string | null
+  status: string
+}
+
 export default async function PreacherProfilePage({
   params,
 }: {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }) {
+  const { slug } = await params
   const supabase = createClient()
 
-  const [{ data: preacher }, { data: studies }] = await Promise.all([
+  const [preacherResult, studiesResult] = await Promise.all([
     supabase
       .from('preachers')
-      .select('*')
-      .eq('slug', params.slug)
-      .eq('status', 'approved')
-      .single(),
+      .select('id, display_name, slug, bio, church, city, photo_url, instagram, whatsapp, pix_key, status')
+      .eq('slug', slug)
+      .eq('status', 'active')
+      .maybeSingle(),
     supabase
       .from('studies')
-      .select('*, categories(name, slug)')
+      .select('id, title, slug, body, youtube_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
       .eq('status', 'published')
       .order('published_at', { ascending: false })
       .limit(20),
   ])
 
+  const preacher = preacherResult.data as PreacherRow | null
   if (!preacher) notFound()
 
-  const preacherStudies = studies?.filter((s) => s.preacher_id === preacher.id)
+  const allStudies = studiesResult.data as StudyCardType[] | null
+  const preacherStudies = allStudies?.filter((s) => s.preachers?.slug === preacher.slug)
 
   return (
     <div className="flex flex-col">
-      {/* Header */}
       <div className="bg-[#2E2860] px-5 pt-10 pb-8 text-white">
-        <Link href="/" className="text-white/70 text-sm mb-4 block">
-          ← Voltar
-        </Link>
+        <Link href="/" className="text-white/70 text-sm mb-4 block">← Voltar</Link>
         <div className="flex items-center gap-4">
           {preacher.photo_url ? (
-            <img
-              src={preacher.photo_url}
-              alt={preacher.name}
-              className="h-20 w-20 rounded-full object-cover border-2 border-[#E0A943]"
-            />
+            <img src={preacher.photo_url} alt={preacher.display_name}
+              className="h-20 w-20 rounded-full object-cover border-2 border-[#E0A943]" />
           ) : (
             <div className="h-20 w-20 rounded-full bg-[#E0A943]/30 flex items-center justify-center text-3xl font-bold text-[#E0A943]">
-              {preacher.name[0]}
+              {preacher.display_name[0]}
             </div>
           )}
           <div>
-            <h1 className="text-xl font-bold">{preacher.name}</h1>
-            {preacher.church && (
-              <p className="text-white/70 text-sm">{preacher.church}</p>
-            )}
-            {preacher.city && preacher.state && (
-              <p className="text-white/50 text-xs">
-                {preacher.city}, {preacher.state}
-              </p>
-            )}
+            <h1 className="text-xl font-bold">{preacher.display_name}</h1>
+            {preacher.church && <p className="text-white/70 text-sm">{preacher.church}</p>}
+            {preacher.city && <p className="text-white/50 text-xs">{preacher.city}</p>}
           </div>
         </div>
 
         <div className="flex gap-6 mt-5">
           <div className="text-center">
-            <p className="text-xl font-bold text-[#E0A943]">{preacher.total_studies}</p>
+            <p className="text-xl font-bold text-[#E0A943]">{preacherStudies?.length ?? 0}</p>
             <p className="text-xs text-white/60">Estudos</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xl font-bold text-[#E0A943]">
-              {preacher.total_views.toLocaleString('pt-BR')}
-            </p>
-            <p className="text-xs text-white/60">Leituras</p>
           </div>
         </div>
       </div>
@@ -85,31 +84,23 @@ export default async function PreacherProfilePage({
           </section>
         )}
 
-        <div className="flex gap-3">
-          {preacher.instagram_handle && (
-            <a
-              href={`https://instagram.com/${preacher.instagram_handle}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2E2860]/10 text-[#2E2860] text-sm font-medium"
-            >
+        <div className="flex gap-3 flex-wrap">
+          {preacher.instagram && (
+            <a href={`https://instagram.com/${preacher.instagram}`} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2E2860]/10 text-[#2E2860] text-sm font-medium">
               📸 Instagram
             </a>
           )}
           {preacher.whatsapp && (
-            <a
-              href={`https://wa.me/${preacher.whatsapp.replace(/\D/g, '')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-medium"
-            >
+            <a href={`https://wa.me/${preacher.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-medium">
               💬 WhatsApp
             </a>
           )}
         </div>
 
         {preacher.pix_key && (
-          <PixButton pixKey={preacher.pix_key} preacherName={preacher.name} />
+          <PixButton pixKey={preacher.pix_key} preacherName={preacher.display_name} />
         )}
 
         <section>
@@ -121,8 +112,8 @@ export default async function PreacherProfilePage({
               <StudyCard
                 key={study.id}
                 study={study}
-                preacher={{ name: preacher.name, slug: preacher.slug, photo_url: preacher.photo_url }}
-                category={(study.categories as { name: string; slug: string }) ?? null}
+                preacher={study.preachers}
+                category={study.categories}
               />
             ))}
           </div>

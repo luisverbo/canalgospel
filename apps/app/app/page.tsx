@@ -1,6 +1,7 @@
 import { createClient } from '@canal-gospel/supabase'
 import { DevotionalCard } from '@/components/DevotionalCard'
 import { StudyCard } from '@/components/StudyCard'
+import type { StudyCard as StudyCardType, Devotional } from '@/lib/types'
 import Link from 'next/link'
 
 export default async function HomePage() {
@@ -8,20 +9,22 @@ export default async function HomePage() {
 
   const today = new Date().toISOString().split('T')[0]
 
-  const [{ data: devotional }, { data: studies }] = await Promise.all([
+  const [devotionalResult, studiesResult] = await Promise.all([
     supabase
       .from('daily_devotionals')
-      .select('*')
-      .eq('scheduled_date', today)
-      .eq('published', true)
-      .single(),
+      .select('id, date, verse_ref, verse_text, reflection')
+      .eq('date', today)
+      .maybeSingle(),
     supabase
       .from('studies')
-      .select('*, preachers(name, slug, photo_url), categories(name, slug)')
+      .select('id, title, slug, body, youtube_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
       .eq('status', 'published')
       .order('published_at', { ascending: false })
       .limit(10),
   ])
+
+  const devotional = devotionalResult.data as Devotional | null
+  const studies = studiesResult.data as StudyCardType[] | null
 
   return (
     <div className="flex flex-col gap-6 px-4 pt-6">
@@ -51,8 +54,8 @@ export default async function HomePage() {
             <StudyCard
               key={study.id}
               study={study}
-              preacher={(study.preachers as { name: string; slug: string; photo_url: string | null }) ?? null}
-              category={(study.categories as { name: string; slug: string }) ?? null}
+              preacher={study.preachers}
+              category={study.categories}
             />
           ))}
         </div>

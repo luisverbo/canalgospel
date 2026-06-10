@@ -41,66 +41,45 @@ export interface Database {
       preachers: {
         Row: {
           id: string
-          profile_id: string
           slug: string
-          name: string
+          display_name: string
           bio: string | null
           church: string | null
           city: string | null
-          state: string | null
-          country: string
           photo_url: string | null
-          instagram_handle: string | null
+          instagram: string | null
           whatsapp: string | null
           pix_key: string | null
-          pix_key_type: 'cpf' | 'cnpj' | 'email' | 'phone' | 'random' | null
-          status: 'pending' | 'approved' | 'disabled'
-          total_studies: number
-          total_views: number
+          status: 'pending' | 'active' | 'disabled'
           created_at: string
-          updated_at: string
         }
         Insert: {
-          id?: string
-          profile_id: string
+          id: string
           slug: string
-          name: string
+          display_name: string
           bio?: string | null
           church?: string | null
           city?: string | null
-          state?: string | null
-          country?: string
           photo_url?: string | null
-          instagram_handle?: string | null
+          instagram?: string | null
           whatsapp?: string | null
           pix_key?: string | null
-          pix_key_type?: 'cpf' | 'cnpj' | 'email' | 'phone' | 'random' | null
-          status?: 'pending' | 'approved' | 'disabled'
-          total_studies?: number
-          total_views?: number
+          status?: 'pending' | 'active' | 'disabled'
           created_at?: string
-          updated_at?: string
         }
         Update: {
           id?: string
-          profile_id?: string
           slug?: string
-          name?: string
+          display_name?: string
           bio?: string | null
           church?: string | null
           city?: string | null
-          state?: string | null
-          country?: string
           photo_url?: string | null
-          instagram_handle?: string | null
+          instagram?: string | null
           whatsapp?: string | null
           pix_key?: string | null
-          pix_key_type?: 'cpf' | 'cnpj' | 'email' | 'phone' | 'random' | null
-          status?: 'pending' | 'approved' | 'disabled'
-          total_studies?: number
-          total_views?: number
+          status?: 'pending' | 'active' | 'disabled'
           created_at?: string
-          updated_at?: string
         }
       }
       categories: {
@@ -144,60 +123,42 @@ export interface Database {
       studies: {
         Row: {
           id: string
-          preacher_id: string
+          preacher_id: string | null
           category_id: string | null
           title: string
           slug: string
-          summary: string | null
-          body: string
+          body: string | null
           youtube_url: string | null
-          cover_image_url: string | null
-          read_time_minutes: number
-          status: 'draft' | 'pending_review' | 'published' | 'rejected'
-          rejection_reason: string | null
-          view_count: number
-          favorite_count: number
-          is_premium: boolean
+          read_time_min: number | null
+          status: 'draft' | 'pending' | 'published' | 'rejected'
           published_at: string | null
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
-          preacher_id: string
+          preacher_id?: string | null
           category_id?: string | null
           title: string
           slug: string
-          summary?: string | null
-          body: string
+          body?: string | null
           youtube_url?: string | null
-          cover_image_url?: string | null
-          read_time_minutes?: number
-          status?: 'draft' | 'pending_review' | 'published' | 'rejected'
-          rejection_reason?: string | null
-          view_count?: number
-          favorite_count?: number
-          is_premium?: boolean
+          read_time_min?: number | null
+          status?: 'draft' | 'pending' | 'published' | 'rejected'
           published_at?: string | null
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
-          preacher_id?: string
+          preacher_id?: string | null
           category_id?: string | null
           title?: string
           slug?: string
-          summary?: string | null
-          body?: string
+          body?: string | null
           youtube_url?: string | null
-          cover_image_url?: string | null
-          read_time_minutes?: number
-          status?: 'draft' | 'pending_review' | 'published' | 'rejected'
-          rejection_reason?: string | null
-          view_count?: number
-          favorite_count?: number
-          is_premium?: boolean
+          read_time_min?: number | null
+          status?: 'draft' | 'pending' | 'published' | 'rejected'
           published_at?: string | null
           created_at?: string
           updated_at?: string
