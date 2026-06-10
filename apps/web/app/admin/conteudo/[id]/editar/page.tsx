@@ -14,10 +14,10 @@ export default async function EditarConteudoPage({
   const [{ data: study }, { data: categories }] = await Promise.all([
     supabase
       .from('studies')
-      .select('id, title, body, youtube_url, category_id, content_type')
+      .select('id, title, body, youtube_url, category_id, content_type, cover_url')
       .eq('id', id)
       .maybeSingle(),
-    supabase.from('categories').select('id, name, type').order('name'),
+    supabase.from('categories').select('id, name, kind').order('name'),
   ])
 
   if (!study) notFound()

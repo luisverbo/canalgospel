@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BookOpen } from 'lucide-react'
 import { decodeHtml } from '@/lib/html'
 import { youTubeThumb } from '@/lib/youtube'
 import { BookmarkButton } from './BookmarkButton'
@@ -11,6 +12,7 @@ interface StudyCardProps {
     slug: string
     body?: string | null
     youtube_url?: string | null
+    cover_url?: string | null
     read_time_min?: number | null
     published_at?: string | null
   }
@@ -18,8 +20,17 @@ interface StudyCardProps {
   category: Category | null
 }
 
+function extractFirstImage(html: string | null | undefined): string {
+  if (!html) return ''
+  const match = html.match(/<img[^>]+src="([^"]+)"/)
+  return match?.[1] ?? ''
+}
+
 export function StudyCard({ study, preacher, category }: StudyCardProps) {
-  const thumb = study.youtube_url ? youTubeThumb(study.youtube_url) : ''
+  const thumb =
+    study.cover_url ||
+    (study.youtube_url ? youTubeThumb(study.youtube_url) : '') ||
+    extractFirstImage(study.body)
 
   const metaParts = [
     preacher ? decodeHtml(preacher.display_name) : null,
@@ -29,11 +40,15 @@ export function StudyCard({ study, preacher, category }: StudyCardProps) {
   return (
     <Link href={`/studies/${study.slug}`}>
       <div className="flex items-center gap-3 bg-white dark:bg-[#211E2D] rounded-2xl p-3 border border-[#1E1B2E]/7 dark:border-white/7 active:scale-[0.98] transition-transform">
-        {thumb && (
-          <div className="h-16 w-24 shrink-0 rounded-xl bg-[#EDEAF6] dark:bg-[#2E2860]/30 overflow-hidden">
+        <div className="h-16 w-24 shrink-0 rounded-xl overflow-hidden">
+          {thumb ? (
             <img src={thumb} alt={decodeHtml(study.title)} className="w-full h-full object-cover" />
-          </div>
-        )}
+          ) : (
+            <div className="w-full h-full bg-[#2E2860] dark:bg-[#2E2860]/80 flex items-center justify-center">
+              <BookOpen size={22} className="text-white/70" strokeWidth={1.5} />
+            </div>
+          )}
+        </div>
 
         <div className="flex-1 min-w-0">
           {category && (

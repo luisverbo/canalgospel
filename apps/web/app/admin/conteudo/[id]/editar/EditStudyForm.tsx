@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateStudy } from './actions'
 import { RichTextEditor } from '../../RichTextEditor'
+import { uploadStudyImage } from '../../upload-actions'
 
-interface Category { id: string; name: string; type?: string }
+interface Category { id: string; name: string; kind?: string }
 
 interface Study {
   id: string
@@ -14,15 +15,52 @@ interface Study {
   youtube_url: string | null
   category_id: string | null
   content_type: string | null
+  cover_url?: string | null
+}
+
+const kindLabel: Record<string, string> = { tema: 'Temas', livro: 'Livros Bíblicos', ocasiao: 'Ocasiões' }
+
+function groupByKind(cats: { id: string; name: string; kind?: string }[]) {
+  const groups: Record<string, typeof cats> = {}
+  for (const c of cats) {
+    const k = c.kind ?? 'tema'
+    if (!groups[k]) groups[k] = []
+    groups[k].push(c)
+  }
+  return groups
 }
 
 export function EditStudyForm({ study, categories }: { study: Study; categories: Category[] }) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [coverUrl, setCoverUrl] = useState(study.cover_url ?? '')
+  const [coverPreview, setCoverPreview] = useState(study.cover_url ?? '')
+  const [coverUploading, setCoverUploading] = useState(false)
+  const coverInputRef = useRef<HTMLInputElement>(null)
 
   const isVideo = !!study.youtube_url || study.content_type === 'video'
   const inputCls = 'w-full px-3.5 py-2.5 rounded-xl border border-[#1E1B2E]/15 bg-white text-[#1E1B2E] text-sm outline-none focus:border-[#2E2860]'
+  const categoryGroups = groupByKind(categories)
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCoverUploading(true)
+    try {
+      const fd = new FormData()
+      fd.set('file', file)
+      const result = await uploadStudyImage(fd)
+      if (result.error || !result.url) throw new Error(result.error ?? 'Falha no upload')
+      setCoverUrl(result.url)
+      setCoverPreview(result.url)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha no upload da capa')
+    } finally {
+      setCoverUploading(false)
+      if (coverInputRef.current) coverInputRef.current.value = ''
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -51,10 +89,12 @@ export function EditStudyForm({ study, categories }: { study: Study; categories:
         <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">Categoria / Ocasião</label>
         <select name="category_id" defaultValue={study.category_id ?? ''} className={inputCls}>
           <option value="">Sem categoria</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}{c.type === 'occasion' ? ' (ocasião)' : ''}
-            </option>
+          {Object.entries(categoryGroups).map(([kind, cats]) => (
+            <optgroup key={kind} label={kindLabel[kind] ?? kind}>
+              {cats.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </optgroup>
           ))}
         </select>
       </div>
@@ -65,6 +105,30 @@ export function EditStudyForm({ study, categories }: { study: Study; categories:
           <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">URL do YouTube</label>
           <input name="youtube_url" defaultValue={study.youtube_url ?? ''}
             placeholder="https://youtube.com/watch?v=..." className={inputCls} />
+        </div>
+      )}
+
+      {/* Capa (só para estudos de texto) */}
+      {!isVideo && (
+        <div>
+          <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">
+            Imagem de capa <span className="text-[#8A8797] font-normal">(opcional)</span>
+          </label>
+          <div className="flex items-center gap-3">
+            {coverPreview && (
+              <img src={coverPreview} alt="Capa" className="h-16 w-24 rounded-xl object-cover border border-[#1E1B2E]/10" />
+            )}
+            <button type="button" onClick={() => coverInputRef.current?.click()} disabled={coverUploading}
+              className="px-4 py-2 border border-[#1E1B2E]/15 text-sm text-[#2E2860] rounded-xl hover:bg-[#2E2860]/5 disabled:opacity-50">
+              {coverUploading ? 'Enviando…' : coverPreview ? 'Trocar imagem' : 'Escolher imagem'}
+            </button>
+            {coverPreview && (
+              <button type="button" onClick={() => { setCoverUrl(''); setCoverPreview('') }}
+                className="text-xs text-red-500 hover:underline">Remover</button>
+            )}
+          </div>
+          <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
+          <input type="hidden" name="cover_url" value={coverUrl} />
         </div>
       )}
 

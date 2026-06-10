@@ -118,9 +118,9 @@ export function StudyReader({
         {study.body && study.body.trim() && study.body.trim() !== ' ' && (
           looksLikeHtml(study.body) ? (
             <div
-              className={`prose max-w-none ${fontSizeClass} leading-relaxed ${
+              className={`prose max-w-none ${fontSizeClass} leading-relaxed prose-a:underline ${
                 darkMode
-                  ? 'prose-invert prose-p:text-[#D8D5E4] prose-headings:text-[#F3F1FA] prose-a:text-[#E0A943]'
+                  ? 'prose-invert prose-p:text-[#D8D5E4] prose-headings:text-[#F3F1FA] prose-a:text-[#B5B0D8]'
                   : 'prose-p:text-[#1E1B2E] prose-a:text-[#2E2860]'
               }`}
               dangerouslySetInnerHTML={{ __html: decodeHtml(study.body) }}

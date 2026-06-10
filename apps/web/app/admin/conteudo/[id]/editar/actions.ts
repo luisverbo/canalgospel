@@ -18,6 +18,8 @@ export async function updateStudy(studyId: string, formData: FormData) {
 
   if (!title) return { error: 'Título é obrigatório' }
 
+  const coverUrl = (formData.get('cover_url') as string | null)?.trim() || null
+
   const { error } = await supabase
     .from('studies')
     .update({
@@ -25,6 +27,7 @@ export async function updateStudy(studyId: string, formData: FormData) {
       body: htmlIsEmpty(body) ? ' ' : body.trim(),
       youtube_url: youtubeUrl || null,
       category_id: categoryId || null,
+      cover_url: coverUrl,
     })
     .eq('id', studyId)
 
