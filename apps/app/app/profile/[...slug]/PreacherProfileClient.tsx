@@ -1,7 +1,10 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
 import { createClient } from '@canal-gospel/supabase'
 import { StudyCard } from '@/components/StudyCard'
 import type { StudyCard as StudyCardType } from '@/lib/types'
-import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { PixButton } from './PixButton'
 
@@ -16,37 +19,63 @@ interface PreacherRow {
   instagram: string | null
   whatsapp: string | null
   pix_key: string | null
-  status: string
 }
 
-export default async function PreacherProfilePage({
-  params,
-}: {
-  params: Promise<{ slug: string }>
-}) {
-  const { slug } = await params
-  const supabase = createClient()
+export function PreacherProfileClient() {
+  const params = useParams()
+  const slugParts = params.slug as string[] | undefined
+  const slug = slugParts?.[0] ?? ''
 
-  const [preacherResult, studiesResult] = await Promise.all([
-    supabase
-      .from('preachers')
-      .select('id, display_name, slug, bio, church, city, photo_url, instagram, whatsapp, pix_key, status')
-      .eq('slug', slug)
-      .eq('status', 'active')
-      .maybeSingle(),
-    supabase
-      .from('studies')
-      .select('id, title, slug, body, youtube_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
-      .eq('status', 'published')
-      .order('published_at', { ascending: false })
-      .limit(20),
-  ])
+  const [preacher, setPreacher] = useState<PreacherRow | null>(null)
+  const [studies, setStudies] = useState<StudyCardType[]>([])
+  const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
 
-  const preacher = preacherResult.data as PreacherRow | null
-  if (!preacher) notFound()
+  useEffect(() => {
+    if (!slug) return
+    const supabase = createClient()
+    Promise.all([
+      supabase
+        .from('preachers')
+        .select('id, display_name, slug, bio, church, city, photo_url, instagram, whatsapp, pix_key')
+        .eq('slug', slug)
+        .eq('status', 'active')
+        .maybeSingle(),
+      supabase
+        .from('studies')
+        .select('id, title, slug, body, youtube_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+        .limit(20),
+    ]).then(([preacherResult, studiesResult]) => {
+      if (!preacherResult.data) { setNotFound(true); setLoading(false); return }
+      setPreacher(preacherResult.data as PreacherRow)
+      const all = (studiesResult.data as StudyCardType[] | null) ?? []
+      setStudies(all.filter((s) => s.preachers?.slug === slug))
+      setLoading(false)
+    })
+  }, [slug])
 
-  const allStudies = studiesResult.data as StudyCardType[] | null
-  const preacherStudies = allStudies?.filter((s) => s.preachers?.slug === preacher.slug)
+  if (!slug || loading) {
+    return (
+      <div className="flex flex-col">
+        <div className="bg-[#2E2860] h-48 animate-pulse" />
+        <div className="px-5 py-5 flex flex-col gap-4">
+          {[1, 2].map((i) => <div key={i} className="h-20 rounded-2xl bg-white/60 animate-pulse" />)}
+        </div>
+      </div>
+    )
+  }
+
+  if (notFound || !preacher) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen px-4">
+        <p className="text-4xl mb-3">😕</p>
+        <p className="text-[#8A8797]">Pregador não encontrado.</p>
+        <Link href="/" className="mt-4 text-[#2E2860] font-medium">← Voltar</Link>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col">
@@ -67,10 +96,9 @@ export default async function PreacherProfilePage({
             {preacher.city && <p className="text-white/50 text-xs">{preacher.city}</p>}
           </div>
         </div>
-
-        <div className="flex gap-6 mt-5">
-          <div className="text-center">
-            <p className="text-xl font-bold text-[#E0A943]">{preacherStudies?.length ?? 0}</p>
+        <div className="mt-5">
+          <div className="text-center inline-block">
+            <p className="text-xl font-bold text-[#E0A943]">{studies.length}</p>
             <p className="text-xs text-white/60">Estudos</p>
           </div>
         </div>
@@ -104,17 +132,10 @@ export default async function PreacherProfilePage({
         )}
 
         <section>
-          <h2 className="text-base font-semibold text-[#1E1B2E] mb-3">
-            Estudos ({preacherStudies?.length ?? 0})
-          </h2>
+          <h2 className="text-base font-semibold text-[#1E1B2E] mb-3">Estudos ({studies.length})</h2>
           <div className="flex flex-col gap-3">
-            {preacherStudies?.map((study) => (
-              <StudyCard
-                key={study.id}
-                study={study}
-                preacher={study.preachers}
-                category={study.categories}
-              />
+            {studies.map((study) => (
+              <StudyCard key={study.id} study={study} preacher={study.preachers} category={study.categories} />
             ))}
           </div>
         </section>

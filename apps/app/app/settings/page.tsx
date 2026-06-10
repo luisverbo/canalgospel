@@ -1,28 +1,26 @@
-import { SettingsClient } from './SettingsClient'
+'use client'
+
+import { useEffect, useState } from 'react'
 import { createClient } from '@canal-gospel/supabase'
+import { SettingsClient } from './SettingsClient'
+import type { User } from '@supabase/supabase-js'
 
-export default async function SettingsPage() {
-  const supabase = createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+export default function SettingsPage() {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  let subscription = null
-  if (session?.user?.id) {
-    const { data } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .eq('status', 'active')
-      .single()
-    subscription = data
-  }
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+      setLoading(false)
+    })
+  }, [])
 
   return (
     <div className="px-4 pt-6">
       <h1 className="text-2xl font-bold text-[#2E2860] mb-6">Configurações</h1>
-      <SettingsClient
-        user={session?.user ?? null}
-        subscription={subscription}
-      />
+      {!loading && <SettingsClient user={user} subscription={null} />}
     </div>
   )
 }
