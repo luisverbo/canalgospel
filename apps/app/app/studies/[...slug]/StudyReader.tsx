@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Sun, Moon, Type, Share2 } from 'lucide-react'
+import { ArrowLeft, Sun, Moon, Share2 } from 'lucide-react'
 import { decodeHtml } from '@/lib/html'
 import { youTubeEmbedUrl } from '@/lib/youtube'
+import { linkifyPlainText, looksLikeHtml } from '@/lib/linkify'
 
 interface Study {
   id: string
@@ -81,41 +82,34 @@ export function StudyReader({
           </span>
         )}
 
-        <h1 className={`text-2xl font-bold leading-snug mb-3 ${darkMode ? 'text-[#F3F1FA]' : 'text-[#1E1B2E]'}`}>
+        {/* Título — peso 500, tamanho contido */}
+        <h1 className={`text-2xl font-medium leading-snug mb-2 ${darkMode ? 'text-[#F3F1FA]' : 'text-[#1E1B2E]'}`}>
           {decodeHtml(study.title)}
         </h1>
 
-        {preacher && (
-          <Link href={`/profile/${preacher.slug}`} className="flex items-center gap-2.5 mb-4">
-            {preacher.photo_url ? (
-              <img src={preacher.photo_url} alt={preacher.display_name}
-                className="h-8 w-8 rounded-full object-cover" />
-            ) : (
-              <div className="h-8 w-8 rounded-full bg-[#2E2860]/20 flex items-center justify-center text-xs font-bold text-[#2E2860]">
-                {preacher.display_name[0]}
-              </div>
-            )}
-            <div>
-              <p className={`font-medium text-sm ${darkMode ? 'text-[#D8D5E4]' : 'text-[#1E1B2E]'}`}>
+        {/* Linha de metadados: pregador · data */}
+        {(preacher || study.published_at || study.read_time_min) && (
+          <div className={`flex flex-wrap items-center gap-x-1.5 text-sm mb-6 ${darkMode ? 'text-white/40' : 'text-[#8A8797]'}`}>
+            {preacher && (
+              <Link href={`/profile/${preacher.slug}`} className="font-medium hover:underline">
                 {decodeHtml(preacher.display_name)}
-              </p>
-              {preacher.church && (
-                <p className={`text-xs ${darkMode ? 'text-white/40' : 'text-[#8A8797]'}`}>{preacher.church}</p>
-              )}
-            </div>
-          </Link>
-        )}
-
-        {study.read_time_min && (
-          <p className={`text-xs mb-6 flex items-center gap-1.5 ${darkMode ? 'text-white/30' : 'text-[#8A8797]'}`}>
-            <Type size={12} strokeWidth={1.5} />
-            {study.read_time_min} min de leitura
-            {study.published_at && ` · ${new Date(study.published_at).toLocaleDateString('pt-BR')}`}
-          </p>
+              </Link>
+            )}
+            {preacher && (study.published_at || study.read_time_min) && <span>·</span>}
+            {study.published_at && (
+              <span>{new Date(study.published_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+            )}
+            {study.read_time_min && (
+              <>
+                {(preacher || study.published_at) && <span>·</span>}
+                <span>{study.read_time_min} min de leitura</span>
+              </>
+            )}
+          </div>
         )}
 
         {study.youtube_url && youTubeEmbedUrl(study.youtube_url) && (
-          <div className="mb-6 aspect-video rounded-2xl overflow-hidden bg-black">
+          <div className="my-6 aspect-video rounded-2xl overflow-hidden bg-black">
             <iframe
               src={youTubeEmbedUrl(study.youtube_url)}
               title={decodeHtml(study.title)}
@@ -125,14 +119,25 @@ export function StudyReader({
         )}
 
         {study.body && study.body.trim() && study.body.trim() !== ' ' && (
-          <div
-            className={`prose max-w-none ${fontSizeClass} leading-relaxed ${
-              darkMode
-                ? 'prose-invert prose-p:text-[#D8D5E4] prose-headings:text-[#F3F1FA]'
-                : 'prose-p:text-[#1E1B2E]'
-            }`}
-            dangerouslySetInnerHTML={{ __html: decodeHtml(study.body) }}
-          />
+          looksLikeHtml(study.body) ? (
+            <div
+              className={`prose max-w-none ${fontSizeClass} leading-relaxed ${
+                darkMode
+                  ? 'prose-invert prose-p:text-[#D8D5E4] prose-headings:text-[#F3F1FA] prose-a:text-[#E0A943]'
+                  : 'prose-p:text-[#1E1B2E] prose-a:text-[#2E2860]'
+              }`}
+              dangerouslySetInnerHTML={{ __html: decodeHtml(study.body) }}
+            />
+          ) : (
+            <div className={`${fontSizeClass} leading-relaxed ${darkMode ? 'text-[#D8D5E4]' : 'text-[#1E1B2E]'}`}>
+              {linkifyPlainText(
+                study.body,
+                darkMode
+                  ? 'text-[#E0A943] underline break-words'
+                  : 'text-[#2E2860] underline break-words'
+              )}
+            </div>
+          )
         )}
       </article>
     </div>

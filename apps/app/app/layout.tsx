@@ -14,8 +14,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className="bg-[#FAF7F1] text-[#1E1B2E] font-sans min-h-screen">
-        <main className="pb-20 min-h-screen">
+      <body className="bg-[#FAF7F1] text-[#1E1B2E] font-sans min-h-[100dvh]">
+        <main className="min-h-[100dvh] pb-[calc(5rem+env(safe-area-inset-bottom,0px))]">
           {children}
         </main>
         <BottomNav />

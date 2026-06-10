@@ -17,9 +17,18 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Garante que `position: fixed` resolva contra a viewport visível
+     (evita a barra inferior "flutuar" no meio durante o scroll na WebView). */
+  min-height: 100dvh;
+  overscroll-behavior-y: none;
 }
 
 .font-serif-devotional {

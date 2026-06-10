@@ -95,7 +95,13 @@ export default async function ConteudoPage({
                   }
                   {study.youtube_url && <Badge variant="indigo">YouTube</Badge>}
                 </div>
-                <h3 className="font-semibold text-[#1E1B2E] mb-1 line-clamp-2">{study.title}</h3>
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="font-semibold text-[#1E1B2E] mb-1 line-clamp-2">{study.title}</h3>
+                  <Link href={`/admin/conteudo/${study.id}/editar`}
+                    className="shrink-0 px-3 py-1.5 rounded-lg border border-[#1E1B2E]/15 text-[#2E2860] text-xs font-semibold hover:bg-[#2E2860]/5 transition-colors">
+                    Editar
+                  </Link>
+                </div>
                 <p className="text-sm text-[#8A8797]">
                   {(study.preachers as { display_name: string } | null)?.display_name ?? 'Sem pregador'}
                 </p>
