@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/studies/:path+", "destination": "/studies/_/" },
+    { "source": "/profile/:path+", "destination": "/profile/_/" }
+  ]
+}

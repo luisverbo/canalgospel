@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;1,400&display=swap');
 
 :root {
   --brand-bg: #FAF7F1;
@@ -18,7 +18,12 @@
 }
 
 body {
+  font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+.font-serif-devotional {
+  font-family: 'Lora', Georgia, serif;
 }
 
 .safe-area-bottom {
