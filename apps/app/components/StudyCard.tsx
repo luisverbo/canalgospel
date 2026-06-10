@@ -33,8 +33,15 @@ export function StudyCard({ study, preacher, category }: StudyCardProps) {
     extractFirstImage(study.body)
 
   return (
-    <div className="flex items-center gap-3 bg-white dark:bg-[#211E2D] rounded-2xl p-3 border border-[#1E1B2E]/7 dark:border-white/7">
-      <Link href={`/studies/${study.slug}`} className="h-16 w-24 shrink-0 rounded-xl overflow-hidden active:scale-[0.98] transition-transform">
+    <div className="relative flex items-center gap-3 bg-white dark:bg-[#211E2D] rounded-2xl p-3 border border-[#1E1B2E]/7 dark:border-white/7 active:scale-[0.98] transition-transform">
+      {/* Link "esticado" cobre todo o card — clicar em qualquer área leva ao estudo */}
+      <Link
+        href={`/studies/${study.slug}`}
+        aria-label={decodeHtml(study.title)}
+        className="absolute inset-0 z-0 rounded-2xl"
+      />
+
+      <div className="h-16 w-24 shrink-0 rounded-xl overflow-hidden">
         {thumb ? (
           <img src={thumb} alt={decodeHtml(study.title)} className="w-full h-full object-cover" />
         ) : (
@@ -42,7 +49,7 @@ export function StudyCard({ study, preacher, category }: StudyCardProps) {
             <BookOpen size={22} className="text-white/70" strokeWidth={1.5} />
           </div>
         )}
-      </Link>
+      </div>
 
       <div className="flex-1 min-w-0">
         {category && (
@@ -50,14 +57,15 @@ export function StudyCard({ study, preacher, category }: StudyCardProps) {
             {decodeHtml(category.name)}
           </span>
         )}
-        <Link href={`/studies/${study.slug}`}>
-          <h3 className="font-medium text-sm text-[#1E1B2E] dark:text-[#F3F1FA] leading-snug line-clamp-2">
-            {decodeHtml(study.title)}
-          </h3>
-        </Link>
+        <h3 className="font-medium text-sm text-[#1E1B2E] dark:text-[#F3F1FA] leading-snug line-clamp-2">
+          {decodeHtml(study.title)}
+        </h3>
         <p className="text-[11px] text-[#8A8797] dark:text-white/40 mt-1 truncate">
           {preacher ? (
-            <Link href={`/profile/${preacher.slug}`} className="hover:underline font-medium text-[#2E2860] dark:text-[#B5B0D8]">
+            <Link
+              href={`/profile/${preacher.slug}`}
+              className="relative z-10 hover:underline font-medium text-[#2E2860] dark:text-[#B5B0D8]"
+            >
               {decodeHtml(preacher.display_name)}
             </Link>
           ) : null}
@@ -66,7 +74,10 @@ export function StudyCard({ study, preacher, category }: StudyCardProps) {
         </p>
       </div>
 
-      <BookmarkButton studyId={study.id} />
+      {/* Acima do link esticado para permanecer clicável */}
+      <span className="relative z-10">
+        <BookmarkButton studyId={study.id} />
+      </span>
     </div>
   )
 }

@@ -58,7 +58,7 @@ export async function middleware(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    if (profile?.role !== 'preacher' && profile?.role !== 'partner' && profile?.role !== 'admin') {
+    if (profile?.role !== 'partner' && profile?.role !== 'admin') {
       return NextResponse.redirect(new URL('/', request.url))
     }
   }

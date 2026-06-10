@@ -19,7 +19,7 @@ export async function requirePartner() {
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'preacher' && profile?.role !== 'partner' && profile?.role !== 'admin') {
+  if (profile?.role !== 'partner' && profile?.role !== 'admin') {
     throw new Error('Acesso negado: apenas parceiros')
   }
 

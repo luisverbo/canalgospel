@@ -26,8 +26,5 @@ as $$
 $$;
 grant execute on function increment_study_view(uuid) to anon, authenticated;
 
--- Papel de pregador parceiro.
--- Se profiles.role for um ENUM, garanta o valor 'preacher':
---   alter type user_role add value if not exists 'preacher';
--- Se for text/varchar, nenhuma ação é necessária.
--- O código aceita tanto 'preacher' quanto 'partner' na leitura.
+-- Papel do parceiro: o projeto usa role='partner' (valor já existente no schema).
+-- Cadastro, middleware, guards e login usam todos 'partner' — nenhuma ação extra.
