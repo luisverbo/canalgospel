@@ -6,6 +6,8 @@ import { ArrowLeft, Sun, Moon, Share2 } from 'lucide-react'
 import { decodeHtml } from '@/lib/html'
 import { youTubeEmbedUrl } from '@/lib/youtube'
 import { linkifyPlainText, looksLikeHtml } from '@/lib/linkify'
+import { useTheme } from '@/lib/theme'
+import { BookmarkButton } from '@/components/BookmarkButton'
 
 interface Study {
   id: string
@@ -38,36 +40,35 @@ export function StudyReader({
   preacher: Preacher | null
   category: Category | null
 }) {
-  const [darkMode, setDarkMode] = useState(false)
+  const { theme, setTheme } = useTheme()
+  const darkMode = theme === 'dark'
   const [fontSize, setFontSize] = useState<'sm' | 'base' | 'lg'>('base')
 
   const fontSizeClass = { sm: 'text-sm', base: 'text-base', lg: 'text-lg' }[fontSize]
   const cycleFontSize = () => setFontSize((f) => (f === 'sm' ? 'base' : f === 'base' ? 'lg' : 'sm'))
+  const toggleDark = () => setTheme(darkMode ? 'light' : 'dark')
 
   const handleShare = async () => {
     if (navigator.share) await navigator.share({ title: decodeHtml(study.title), url: window.location.href })
   }
 
-  const bg = darkMode ? 'bg-[#17141F]' : 'bg-[#FAF7F1]'
-  const text = darkMode ? 'text-[#D8D5E4]' : 'text-[#1E1B2E]'
-  const border = darkMode ? 'border-white/8' : 'border-[#1E1B2E]/8'
-
   return (
-    <div className={`min-h-screen ${bg} ${text}`}>
+    <div className="min-h-screen bg-[#FAF7F1] dark:bg-[#17141F] text-[#1E1B2E] dark:text-[#D8D5E4]">
       {/* Top bar */}
-      <div className={`sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b ${border} ${bg}`}>
-        <Link href="/studies" className={`flex items-center gap-1.5 text-sm font-medium ${darkMode ? 'text-white/70' : 'text-[#2E2860]'}`}>
+      <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-[#1E1B2E]/8 dark:border-white/8 bg-[#FAF7F1] dark:bg-[#17141F]">
+        <Link href="/studies" className="flex items-center gap-1.5 text-sm font-medium text-[#2E2860] dark:text-white/70">
           <ArrowLeft size={18} strokeWidth={1.5} />
           Voltar
         </Link>
         <div className="flex items-center gap-4">
-          <button onClick={cycleFontSize} className={`text-xs font-bold ${darkMode ? 'text-white/50' : 'text-[#8A8797]'}`}>
+          <button onClick={cycleFontSize} className="text-xs font-bold text-[#8A8797] dark:text-white/50">
             {fontSize === 'sm' ? 'Aa' : fontSize === 'base' ? 'AA' : 'AA+'}
           </button>
-          <button onClick={() => setDarkMode((d) => !d)} className={darkMode ? 'text-[#E0A943]' : 'text-[#2E2860]'}>
+          <button onClick={toggleDark} className={darkMode ? 'text-[#E0A943]' : 'text-[#2E2860]'}>
             {darkMode ? <Sun size={18} strokeWidth={1.5} /> : <Moon size={18} strokeWidth={1.5} />}
           </button>
-          <button onClick={handleShare} className={darkMode ? 'text-white/70' : 'text-[#2E2860]'}>
+          <BookmarkButton studyId={study.id} />
+          <button onClick={handleShare} className="text-[#2E2860] dark:text-white/70">
             <Share2 size={18} strokeWidth={1.5} />
           </button>
         </div>
@@ -75,21 +76,17 @@ export function StudyReader({
 
       <article className="px-5 py-6 max-w-2xl mx-auto">
         {category && (
-          <span className={`inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full mb-3 ${
-            darkMode ? 'bg-[#2E2860]/60 text-[#B5B0D8]' : 'bg-[#2E2860]/8 text-[#2E2860]'
-          }`}>
+          <span className="inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full mb-3 bg-[#2E2860]/8 dark:bg-[#2E2860]/60 text-[#2E2860] dark:text-[#B5B0D8]">
             {decodeHtml(category.name)}
           </span>
         )}
 
-        {/* Título — peso 500, tamanho contido */}
-        <h1 className={`text-2xl font-medium leading-snug mb-2 ${darkMode ? 'text-[#F3F1FA]' : 'text-[#1E1B2E]'}`}>
+        <h1 className="text-2xl font-medium leading-snug mb-2 text-[#1E1B2E] dark:text-[#F3F1FA]">
           {decodeHtml(study.title)}
         </h1>
 
-        {/* Linha de metadados: pregador · data */}
         {(preacher || study.published_at || study.read_time_min) && (
-          <div className={`flex flex-wrap items-center gap-x-1.5 text-sm mb-6 ${darkMode ? 'text-white/40' : 'text-[#8A8797]'}`}>
+          <div className="flex flex-wrap items-center gap-x-1.5 text-sm mb-6 text-[#8A8797] dark:text-white/40">
             {preacher && (
               <Link href={`/profile/${preacher.slug}`} className="font-medium hover:underline">
                 {decodeHtml(preacher.display_name)}
@@ -129,12 +126,10 @@ export function StudyReader({
               dangerouslySetInnerHTML={{ __html: decodeHtml(study.body) }}
             />
           ) : (
-            <div className={`${fontSizeClass} leading-relaxed ${darkMode ? 'text-[#D8D5E4]' : 'text-[#1E1B2E]'}`}>
+            <div className={`${fontSizeClass} leading-relaxed text-[#1E1B2E] dark:text-[#D8D5E4]`}>
               {linkifyPlainText(
                 study.body,
-                darkMode
-                  ? 'text-[#E0A943] underline break-words'
-                  : 'text-[#2E2860] underline break-words'
+                'text-[#2E2860] dark:text-[#E0A943] underline break-words'
               )}
             </div>
           )

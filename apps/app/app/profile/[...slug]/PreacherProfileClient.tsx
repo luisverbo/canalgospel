@@ -106,7 +106,7 @@ export function PreacherProfileClient() {
       <div className="px-5 py-5 flex flex-col gap-5">
         {preacher.bio && (
           <section>
-            <h2 className="text-base font-semibold text-[#1E1B2E] mb-2">Sobre</h2>
+            <h2 className="text-base font-semibold text-[#1E1B2E] dark:text-[#F3F1FA] mb-2">Sobre</h2>
             <p className="text-sm text-[#8A8797] leading-relaxed">{preacher.bio}</p>
           </section>
         )}
@@ -114,13 +114,13 @@ export function PreacherProfileClient() {
         <div className="flex gap-3 flex-wrap">
           {preacher.instagram && (
             <a href={`https://instagram.com/${preacher.instagram}`} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2E2860]/10 text-[#2E2860] text-sm font-medium">
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2E2860]/10 dark:bg-white/10 text-[#2E2860] dark:text-[#B5B0D8] text-sm font-medium">
               📸 Instagram
             </a>
           )}
           {preacher.whatsapp && (
             <a href={`https://wa.me/${preacher.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-medium">
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-medium">
               💬 WhatsApp
             </a>
           )}
@@ -131,7 +131,7 @@ export function PreacherProfileClient() {
         )}
 
         <section>
-          <h2 className="text-base font-semibold text-[#1E1B2E] mb-3">Estudos ({studies.length})</h2>
+          <h2 className="text-base font-semibold text-[#1E1B2E] dark:text-[#F3F1FA] mb-3">Estudos ({studies.length})</h2>
           <div className="flex flex-col gap-3">
             {studies.map((study) => (
               <StudyCard key={study.id} study={study} preacher={study.preachers} category={study.categories} />

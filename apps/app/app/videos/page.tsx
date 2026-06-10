@@ -34,17 +34,12 @@ export default function VideosPage() {
       .order('published_at', { ascending: false })
       .then(({ data }) => {
         const studies = (data as VideoStudy[] | null) ?? []
-
         const map = new Map<string, PreacherGroup>()
-
         studies.forEach((study) => {
           const key = study.preachers?.slug ?? '__none__'
-          if (!map.has(key)) {
-            map.set(key, { preacher: study.preachers ?? null, studies: [] })
-          }
+          if (!map.has(key)) map.set(key, { preacher: study.preachers ?? null, studies: [] })
           map.get(key)!.studies.push(study)
         })
-
         setGroups(Array.from(map.values()))
         setLoading(false)
       })
@@ -54,7 +49,7 @@ export default function VideosPage() {
     return (
       <div className="px-4 pt-6 flex flex-col gap-4">
         <div className="h-8 w-32 rounded-lg bg-[#2E2860]/10 animate-pulse" />
-        {[1, 2].map((i) => <div key={i} className="h-40 rounded-2xl bg-white/60 animate-pulse" />)}
+        {[1, 2].map((i) => <div key={i} className="h-40 rounded-2xl bg-white/60 dark:bg-white/5 animate-pulse" />)}
       </div>
     )
   }
@@ -70,49 +65,47 @@ export default function VideosPage() {
 
   return (
     <div className="flex flex-col gap-6 px-4 pt-6 pb-4">
-      <h1 className="text-2xl font-bold text-[#2E2860]">Vídeos</h1>
+      <h1 className="text-2xl font-bold text-[#2E2860] dark:text-[#F3F1FA]">Vídeos</h1>
 
       {groups.map(({ preacher, studies }) => (
         <section key={preacher?.slug ?? '__none__'}>
-          {/* Preacher header */}
           {preacher ? (
             <Link href={`/profile/${preacher.slug}`} className="flex items-center gap-3 mb-3">
               {preacher.photo_url ? (
                 <img src={preacher.photo_url} alt={preacher.display_name}
-                  className="h-10 w-10 rounded-full object-cover border border-[#1E1B2E]/8" />
+                  className="h-10 w-10 rounded-full object-cover border border-[#1E1B2E]/8 dark:border-white/10" />
               ) : (
-                <div className="h-10 w-10 rounded-full bg-[#2E2860]/10 flex items-center justify-center">
-                  <User size={18} className="text-[#2E2860]" strokeWidth={1.5} />
+                <div className="h-10 w-10 rounded-full bg-[#2E2860]/10 dark:bg-white/10 flex items-center justify-center">
+                  <User size={18} className="text-[#2E2860] dark:text-[#B5B0D8]" strokeWidth={1.5} />
                 </div>
               )}
-              <span className="font-semibold text-[#1E1B2E]">{decodeHtml(preacher.display_name)}</span>
+              <span className="font-semibold text-[#1E1B2E] dark:text-[#F3F1FA]">{decodeHtml(preacher.display_name)}</span>
             </Link>
           ) : (
             <div className="flex items-center gap-3 mb-3">
-              <div className="h-10 w-10 rounded-full bg-[#2E2860]/10 flex items-center justify-center">
-                <User size={18} className="text-[#2E2860]" strokeWidth={1.5} />
+              <div className="h-10 w-10 rounded-full bg-[#2E2860]/10 dark:bg-white/10 flex items-center justify-center">
+                <User size={18} className="text-[#2E2860] dark:text-[#B5B0D8]" strokeWidth={1.5} />
               </div>
-              <span className="font-semibold text-[#1E1B2E]">Canal Gospel</span>
+              <span className="font-semibold text-[#1E1B2E] dark:text-[#F3F1FA]">Canal Gospel</span>
             </div>
           )}
 
           <div className="flex flex-col gap-3">
             {studies.map((study) => (
               <Link key={study.id} href={`/studies/${study.slug}`}>
-                <div className="flex gap-3 bg-white rounded-2xl overflow-hidden border border-[#1E1B2E]/7 active:scale-[0.98] transition-transform">
-                  <div className="h-20 w-28 shrink-0 bg-[#2E2860]/8 overflow-hidden">
+                <div className="flex gap-3 bg-white dark:bg-[#211E2D] rounded-2xl overflow-hidden border border-[#1E1B2E]/7 dark:border-white/7 active:scale-[0.98] transition-transform">
+                  <div className="h-20 w-28 shrink-0 bg-[#2E2860]/8 dark:bg-[#2E2860]/20 overflow-hidden">
                     {study.youtube_url && youTubeThumb(study.youtube_url) ? (
-                      <img
-                        src={youTubeThumb(study.youtube_url)}
+                      <img src={youTubeThumb(study.youtube_url)}
                         alt={decodeHtml(study.title)} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Play size={24} className="text-[#2E2860]/40" />
+                        <Play size={24} className="text-[#2E2860]/40 dark:text-white/20" />
                       </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0 py-3 pr-3 flex flex-col justify-center">
-                    <p className="font-medium text-sm text-[#1E1B2E] line-clamp-2 leading-snug">
+                    <p className="font-medium text-sm text-[#1E1B2E] dark:text-[#F3F1FA] line-clamp-2 leading-snug">
                       {decodeHtml(study.title)}
                     </p>
                   </div>

@@ -36,7 +36,7 @@ function SearchContent() {
 
   return (
     <div className="flex flex-col gap-4 px-4 pt-6">
-      <h1 className="text-2xl font-bold text-[#2E2860]">Buscar</h1>
+      <h1 className="text-2xl font-bold text-[#2E2860] dark:text-[#F3F1FA]">Buscar</h1>
       <SearchForm initialQuery={query} />
 
       {query && studies !== null && !loading && (
@@ -45,7 +45,7 @@ function SearchContent() {
         </p>
       )}
 
-      {loading && <div className="flex flex-col gap-3">{[1, 2, 3].map((i) => <div key={i} className="h-20 rounded-2xl bg-white/60 animate-pulse" />)}</div>}
+      {loading && <div className="flex flex-col gap-3">{[1, 2, 3].map((i) => <div key={i} className="h-20 rounded-2xl bg-white/60 dark:bg-white/5 animate-pulse" />)}</div>}
 
       {!loading && (
         <div className="flex flex-col gap-3">

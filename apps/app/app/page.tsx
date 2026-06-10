@@ -25,7 +25,6 @@ export default function HomePage() {
     const today = new Date().toISOString().split('T')[0]
 
     Promise.all([
-      // devocional do dia; se não houver, o mais recente
       supabase
         .from('daily_devotionals')
         .select('id, date, verse_ref, verse_text, reflection')
@@ -51,11 +50,11 @@ export default function HomePage() {
       <header className="flex items-center justify-between">
         <div>
           <p className="text-sm text-[#8A8797]">{greeting()}</p>
-          <h1 className="text-2xl font-medium text-[#2E2860]">Canal Gospel</h1>
+          <h1 className="text-2xl font-medium text-[#2E2860] dark:text-[#F3F1FA]">Canal Gospel</h1>
         </div>
         <Link href="/settings">
-          <div className="h-10 w-10 rounded-full bg-[#2E2860]/10 flex items-center justify-center">
-            <Settings size={18} strokeWidth={1.5} className="text-[#2E2860]" />
+          <div className="h-10 w-10 rounded-full bg-[#2E2860]/10 dark:bg-white/10 flex items-center justify-center">
+            <Settings size={18} strokeWidth={1.5} className="text-[#2E2860] dark:text-[#D8D5E4]" />
           </div>
         </Link>
       </header>
@@ -63,15 +62,15 @@ export default function HomePage() {
       {loading ? (
         <div className="flex flex-col gap-4">
           <div className="h-40 rounded-[20px] bg-[#2E2860]/10 animate-pulse" />
-          <div className="h-24 rounded-2xl bg-white/60 animate-pulse" />
-          <div className="h-24 rounded-2xl bg-white/60 animate-pulse" />
+          <div className="h-24 rounded-2xl bg-white/60 dark:bg-white/5 animate-pulse" />
+          <div className="h-24 rounded-2xl bg-white/60 dark:bg-white/5 animate-pulse" />
         </div>
       ) : (
         <>
           {devotional && <DevotionalCard devotional={devotional} />}
 
           {/* Card IA — Plano Pregador */}
-          <div className="flex items-center gap-4 bg-[#1E1B2E] rounded-2xl p-4">
+          <div className="flex items-center gap-4 bg-[#1E1B2E] dark:bg-[#2E2860]/40 rounded-2xl p-4">
             <div className="h-11 w-11 shrink-0 rounded-xl bg-[#E0A943] flex items-center justify-center">
               <WandSparkles size={20} strokeWidth={1.8} className="text-[#1E1B2E]" />
             </div>
@@ -84,7 +83,7 @@ export default function HomePage() {
 
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-[#1E1B2E]">Estudos Recentes</h2>
+              <h2 className="text-lg font-bold text-[#1E1B2E] dark:text-[#F3F1FA]">Estudos Recentes</h2>
               <Link href="/studies" className="text-sm font-semibold text-[#E0A943]">Ver todos</Link>
             </div>
             <div className="flex flex-col gap-3">

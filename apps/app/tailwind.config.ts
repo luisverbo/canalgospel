@@ -3,6 +3,7 @@ import baseConfig from '@canal-gospel/ui/tailwind.config'
 
 const config: Config = {
   ...baseConfig,
+  darkMode: 'class',
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',

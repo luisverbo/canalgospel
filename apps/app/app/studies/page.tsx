@@ -41,19 +41,19 @@ function StudiesContent() {
 
   return (
     <div className="flex flex-col gap-4 px-4 pt-6">
-      <h1 className="text-2xl font-bold text-[#2E2860]">Estudos Bíblicos</h1>
+      <h1 className="text-2xl font-bold text-[#2E2860] dark:text-[#F3F1FA]">Estudos Bíblicos</h1>
 
       {!loading && (
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           <Link href="/studies">
             <span className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              !categoryFilter ? 'bg-[#2E2860] text-white' : 'bg-[#2E2860]/10 text-[#2E2860]'
+              !categoryFilter ? 'bg-[#2E2860] text-white' : 'bg-[#2E2860]/10 dark:bg-white/10 text-[#2E2860] dark:text-[#B5B0D8]'
             }`}>Todos</span>
           </Link>
           {categories.map((cat) => (
             <Link key={cat.id} href={`/studies?category=${cat.slug}`}>
               <span className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                categoryFilter === cat.slug ? 'bg-[#2E2860] text-white' : 'bg-[#2E2860]/10 text-[#2E2860]'
+                categoryFilter === cat.slug ? 'bg-[#2E2860] text-white' : 'bg-[#2E2860]/10 dark:bg-white/10 text-[#2E2860] dark:text-[#B5B0D8]'
               }`}>{cat.name}</span>
             </Link>
           ))}
@@ -62,7 +62,7 @@ function StudiesContent() {
 
       {loading ? (
         <div className="flex flex-col gap-3">
-          {[1, 2, 3].map((i) => <div key={i} className="h-24 rounded-2xl bg-white/60 animate-pulse" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="h-24 rounded-2xl bg-white/60 dark:bg-white/5 animate-pulse" />)}
         </div>
       ) : (
         <div className="flex flex-col gap-3">
