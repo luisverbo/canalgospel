@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Sun, Moon, Type, Share2 } from 'lucide-react'
 import { decodeHtml } from '@/lib/html'
+import { youTubeEmbedUrl } from '@/lib/youtube'
 
 interface Study {
   id: string
@@ -113,10 +114,12 @@ export function StudyReader({
           </p>
         )}
 
-        {study.youtube_url && (
-          <div className="mb-6 aspect-video rounded-2xl overflow-hidden">
+        {study.youtube_url && youTubeEmbedUrl(study.youtube_url) && (
+          <div className="mb-6 aspect-video rounded-2xl overflow-hidden bg-black">
             <iframe
-              src={study.youtube_url.replace('watch?v=', 'embed/')}
+              src={youTubeEmbedUrl(study.youtube_url)}
+              title={decodeHtml(study.title)}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               className="w-full h-full" allowFullScreen />
           </div>
         )}

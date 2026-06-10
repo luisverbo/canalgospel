@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
 import { createClient } from '@canal-gospel/supabase'
+import { useSlug } from '@/lib/useSlug'
 import { StudyCard } from '@/components/StudyCard'
 import type { StudyCard as StudyCardType } from '@/lib/types'
 import Link from 'next/link'
@@ -22,9 +22,7 @@ interface PreacherRow {
 }
 
 export function PreacherProfileClient() {
-  const params = useParams()
-  const slugParts = params.slug as string[] | undefined
-  const slug = slugParts?.[0] ?? ''
+  const { slug, resolved } = useSlug('profile')
 
   const [preacher, setPreacher] = useState<PreacherRow | null>(null)
   const [studies, setStudies] = useState<StudyCardType[]>([])
@@ -32,7 +30,8 @@ export function PreacherProfileClient() {
   const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
-    if (!slug) return
+    if (!resolved) return
+    if (!slug) { setNotFound(true); setLoading(false); return }
     const supabase = createClient()
     Promise.all([
       supabase
@@ -54,9 +53,9 @@ export function PreacherProfileClient() {
       setStudies(all.filter((s) => s.preachers?.slug === slug))
       setLoading(false)
     })
-  }, [slug])
+  }, [slug, resolved])
 
-  if (!slug || loading) {
+  if (loading) {
     return (
       <div className="flex flex-col">
         <div className="bg-[#2E2860] h-48 animate-pulse" />

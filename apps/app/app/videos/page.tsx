@@ -5,6 +5,7 @@ import { createClient } from '@canal-gospel/supabase'
 import { decodeHtml } from '@/lib/html'
 import Link from 'next/link'
 import { Play, User } from 'lucide-react'
+import { youTubeThumb } from '@/lib/youtube'
 
 interface VideoStudy {
   id: string
@@ -17,11 +18,6 @@ interface VideoStudy {
 interface PreacherGroup {
   preacher: { display_name: string; slug: string; photo_url: string | null } | null
   studies: VideoStudy[]
-}
-
-function extractYouTubeId(url: string): string {
-  const match = url.match(/(?:v=|youtu\.be\/)([^&?/]+)/)
-  return match?.[1] ?? ''
 }
 
 export default function VideosPage() {
@@ -105,10 +101,10 @@ export default function VideosPage() {
               <Link key={study.id} href={`/studies/${study.slug}`}>
                 <div className="flex gap-3 bg-white rounded-2xl overflow-hidden border border-[#1E1B2E]/7 active:scale-[0.98] transition-transform">
                   <div className="h-20 w-28 shrink-0 bg-[#2E2860]/8 overflow-hidden">
-                    {study.youtube_url ? (
+                    {study.youtube_url && youTubeThumb(study.youtube_url) ? (
                       <img
-                        src={`https://img.youtube.com/vi/${extractYouTubeId(study.youtube_url)}/mqdefault.jpg`}
-                        alt={study.title} className="w-full h-full object-cover" />
+                        src={youTubeThumb(study.youtube_url)}
+                        alt={decodeHtml(study.title)} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <Play size={24} className="text-[#2E2860]/40" />

@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
 import { createClient } from '@canal-gospel/supabase'
+import { useSlug } from '@/lib/useSlug'
 import { StudyReader } from './StudyReader'
 
 interface Study {
@@ -17,16 +17,15 @@ interface Study {
 }
 
 export function StudyPageClient() {
-  const params = useParams()
-  const slugParts = params.slug as string[] | undefined
-  const slug = slugParts?.[0] ?? ''
+  const { slug, resolved } = useSlug('studies')
 
   const [study, setStudy] = useState<Study | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound404, setNotFound404] = useState(false)
 
   useEffect(() => {
-    if (!slug) return
+    if (!resolved) return
+    if (!slug) { setNotFound404(true); setLoading(false); return }
     const supabase = createClient()
     supabase
       .from('studies')
@@ -39,9 +38,9 @@ export function StudyPageClient() {
         else setStudy(data as Study)
         setLoading(false)
       })
-  }, [slug])
+  }, [slug, resolved])
 
-  if (!slug || loading) {
+  if (loading) {
     return (
       <div className="px-5 py-6 flex flex-col gap-4">
         <div className="h-6 w-32 rounded bg-[#2E2860]/10 animate-pulse" />
