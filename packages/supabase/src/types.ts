@@ -51,6 +51,7 @@ export interface Database {
           whatsapp: string | null
           pix_key: string | null
           status: 'pending' | 'active' | 'disabled'
+          auto_publish: boolean
           created_at: string
         }
         Insert: {
@@ -65,6 +66,7 @@ export interface Database {
           whatsapp?: string | null
           pix_key?: string | null
           status?: 'pending' | 'active' | 'disabled'
+          auto_publish?: boolean
           created_at?: string
         }
         Update: {
@@ -79,6 +81,7 @@ export interface Database {
           whatsapp?: string | null
           pix_key?: string | null
           status?: 'pending' | 'active' | 'disabled'
+          auto_publish?: boolean
           created_at?: string
         }
       }
@@ -129,8 +132,12 @@ export interface Database {
           slug: string
           body: string | null
           youtube_url: string | null
+          cover_url: string | null
+          content_type: string | null
           read_time_min: number | null
           status: 'draft' | 'pending' | 'published' | 'rejected'
+          is_featured: boolean
+          featured_until: string | null
           published_at: string | null
           created_at: string
           updated_at: string
@@ -143,8 +150,12 @@ export interface Database {
           slug: string
           body?: string | null
           youtube_url?: string | null
+          cover_url?: string | null
+          content_type?: string | null
           read_time_min?: number | null
           status?: 'draft' | 'pending' | 'published' | 'rejected'
+          is_featured?: boolean
+          featured_until?: string | null
           published_at?: string | null
           created_at?: string
           updated_at?: string
@@ -157,8 +168,12 @@ export interface Database {
           slug?: string
           body?: string | null
           youtube_url?: string | null
+          cover_url?: string | null
+          content_type?: string | null
           read_time_min?: number | null
           status?: 'draft' | 'pending' | 'published' | 'rejected'
+          is_featured?: boolean
+          featured_until?: string | null
           published_at?: string | null
           created_at?: string
           updated_at?: string

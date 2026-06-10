@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { approveStudy, rejectStudy, unpublishStudy, setCategoryAction } from './actions'
+import { approveStudy, rejectStudy, unpublishStudy, setCategoryAction, setFeatured, unsetFeatured } from './actions'
 
 interface Category { id: string; name: string }
 
@@ -10,15 +10,22 @@ export function StudyModerationActions({
   categoryId,
   categories,
   currentStatus,
+  isFeatured = false,
+  featuredUntil = null,
 }: {
   studyId: string
   categoryId: string | null
   categories: Category[]
   currentStatus: string
+  isFeatured?: boolean
+  featuredUntil?: string | null
 }) {
   const [loading, setLoading] = useState(false)
   const [rejecting, setRejecting] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(categoryId ?? '')
+  const [featured, setFeaturedState] = useState(isFeatured)
+  const [featuringOpen, setFeaturingOpen] = useState(false)
+  const [until, setUntil] = useState(featuredUntil ? featuredUntil.slice(0, 10) : '')
 
   const run = async (fn: () => Promise<void>) => {
     setLoading(true)
@@ -29,6 +36,23 @@ export function StudyModerationActions({
   const handleCategoryChange = async (catId: string) => {
     setSelectedCategory(catId)
     await setCategoryAction(studyId, catId)
+  }
+
+  const applyFeature = async () => {
+    setLoading(true)
+    const iso = until ? new Date(`${until}T23:59:59`).toISOString() : null
+    await setFeatured(studyId, iso)
+    setFeaturedState(true)
+    setFeaturingOpen(false)
+    setLoading(false)
+  }
+
+  const removeFeature = async () => {
+    setLoading(true)
+    await unsetFeatured(studyId)
+    setFeaturedState(false)
+    setUntil('')
+    setLoading(false)
   }
 
   return (
@@ -96,6 +120,42 @@ export function StudyModerationActions({
 
       {currentStatus === 'draft' && (
         <span className="text-xs text-[#8A8797] py-2">Rascunho</span>
+      )}
+
+      {/* Destaque na Home — apenas para estudos publicados */}
+      {currentStatus === 'published' && (
+        <div className="border-t border-[#1E1B2E]/8 pt-3 mt-1">
+          {featured ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#9a6f1a] bg-[#E0A943]/15 px-2.5 py-1 rounded-full">
+                ★ Em destaque{featuredUntil ? ` até ${new Date(featuredUntil).toLocaleDateString('pt-BR')}` : ''}
+              </span>
+              <button onClick={removeFeature} disabled={loading}
+                className="text-xs font-medium text-red-600 hover:underline disabled:opacity-50">
+                Remover destaque
+              </button>
+            </div>
+          ) : featuringOpen ? (
+            <div className="flex items-end gap-2 flex-wrap">
+              <div>
+                <label className="block text-[11px] text-[#8A8797] mb-1">Expira em (opcional)</label>
+                <input type="date" value={until} onChange={(e) => setUntil(e.target.value)}
+                  className="px-3 py-1.5 rounded-lg border border-[#1E1B2E]/15 text-sm outline-none focus:border-[#2E2860]" />
+              </div>
+              <button onClick={applyFeature} disabled={loading}
+                className="px-4 py-1.5 bg-[#E0A943] text-[#1E1B2E] rounded-lg text-sm font-semibold hover:bg-[#EFC06A] disabled:opacity-50">
+                {loading ? '...' : 'Destacar'}
+              </button>
+              <button onClick={() => setFeaturingOpen(false)}
+                className="px-3 py-1.5 text-[#8A8797] text-sm">Cancelar</button>
+            </div>
+          ) : (
+            <button onClick={() => setFeaturingOpen(true)}
+              className="text-xs font-semibold text-[#9a6f1a] hover:underline">
+              ★ Destacar na Home
+            </button>
+          )}
+        </div>
       )}
     </div>
   )

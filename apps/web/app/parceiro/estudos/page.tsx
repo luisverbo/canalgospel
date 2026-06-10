@@ -1,40 +1,33 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase/server'
 import { Badge } from '@canal-gospel/ui'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
+const statusLabel: Record<string, string> = {
+  draft: 'Rascunho',
+  pending: 'Em Revisão',
+  published: 'Publicado',
+  rejected: 'Rejeitado',
+}
+const statusVariant: Record<string, 'neutral' | 'gold' | 'green' | 'red'> = {
+  draft: 'neutral',
+  pending: 'gold',
+  published: 'green',
+  rejected: 'red',
+}
+
 export default async function ParceiroEstudosPage() {
-  const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const sessionClient = await createServerSupabaseClient()
+  const { data: { user } } = await sessionClient.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: preacher } = await supabase
-    .from('preachers')
-    .select('id')
-    .eq('profile_id', user.id)
-    .single()
+  const supabase = createAdminSupabaseClient()
 
-  const { data: studies } = preacher
-    ? await supabase
-        .from('studies')
-        .select('*, categories(name)')
-        .eq('preacher_id', preacher.id)
-        .order('created_at', { ascending: false })
-    : { data: [] }
-
-  const statusLabel = {
-    draft: 'Rascunho',
-    pending_review: 'Em Revisão',
-    published: 'Publicado',
-    rejected: 'Rejeitado',
-  }
-
-  const statusVariant = {
-    draft: 'neutral',
-    pending_review: 'gold',
-    published: 'green',
-    rejected: 'red',
-  } as const
+  const { data: studies } = await supabase
+    .from('studies')
+    .select('id, title, status, content_type, youtube_url, published_at, categories(name)')
+    .eq('preacher_id', user.id)
+    .order('created_at', { ascending: false })
 
   return (
     <div>
@@ -53,40 +46,37 @@ export default async function ParceiroEstudosPage() {
           <thead className="bg-[#FAF7F1] border-b border-[#1E1B2E]/8">
             <tr>
               <th className="text-left px-5 py-3 text-xs font-semibold text-[#8A8797] uppercase">Título</th>
+              <th className="text-left px-5 py-3 text-xs font-semibold text-[#8A8797] uppercase">Tipo</th>
               <th className="text-left px-5 py-3 text-xs font-semibold text-[#8A8797] uppercase">Categoria</th>
-              <th className="text-left px-5 py-3 text-xs font-semibold text-[#8A8797] uppercase">Views</th>
               <th className="text-left px-5 py-3 text-xs font-semibold text-[#8A8797] uppercase">Status</th>
               <th className="px-5 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-[#1E1B2E]/5">
-            {studies?.map((study) => (
-              <tr key={study.id} className="hover:bg-[#FAF7F1]">
-                <td className="px-5 py-4">
-                  <p className="font-medium text-sm text-[#1E1B2E] max-w-xs truncate">{study.title}</p>
-                  {study.rejection_reason && (
-                    <p className="text-xs text-red-600 mt-0.5 max-w-xs truncate">{study.rejection_reason}</p>
-                  )}
-                </td>
-                <td className="px-5 py-4 text-sm text-[#8A8797]">
-                  {(study.categories as { name: string } | null)?.name ?? '—'}
-                </td>
-                <td className="px-5 py-4 text-sm text-[#1E1B2E]">{study.view_count}</td>
-                <td className="px-5 py-4">
-                  <Badge variant={statusVariant[study.status as keyof typeof statusVariant]}>
-                    {statusLabel[study.status as keyof typeof statusLabel]}
-                  </Badge>
-                </td>
-                <td className="px-5 py-4">
-                  <Link
-                    href={`/parceiro/estudos/${study.id}`}
-                    className="text-xs font-medium text-[#2E2860] hover:underline"
-                  >
-                    Editar
-                  </Link>
-                </td>
-              </tr>
-            ))}
+            {studies?.map((study) => {
+              const isVideo = study.content_type === 'video' || !!study.youtube_url
+              return (
+                <tr key={study.id} className="hover:bg-[#FAF7F1]">
+                  <td className="px-5 py-4">
+                    <p className="font-medium text-sm text-[#1E1B2E] max-w-xs truncate">{study.title}</p>
+                  </td>
+                  <td className="px-5 py-4 text-sm text-[#8A8797]">{isVideo ? '▶ Vídeo' : '📝 Texto'}</td>
+                  <td className="px-5 py-4 text-sm text-[#8A8797]">
+                    {(study.categories as { name: string } | null)?.name ?? '—'}
+                  </td>
+                  <td className="px-5 py-4">
+                    <Badge variant={statusVariant[study.status] ?? 'neutral'}>
+                      {statusLabel[study.status] ?? study.status}
+                    </Badge>
+                  </td>
+                  <td className="px-5 py-4">
+                    <Link href={`/parceiro/estudos/${study.id}`} className="text-xs font-medium text-[#2E2860] hover:underline">
+                      Editar
+                    </Link>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
         {!studies?.length && (

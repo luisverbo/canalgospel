@@ -36,7 +36,7 @@ export default async function ConteudoPage({
   const [studiesResult, { data: categories }] = await Promise.all([
     supabase
       .from('studies')
-      .select('id, title, body, youtube_url, status, created_at, preacher_id, category_id, preachers(display_name), categories(name)')
+      .select('id, title, body, youtube_url, status, is_featured, featured_until, created_at, preacher_id, category_id, preachers(display_name), categories(name)')
       .in('status', statuses)
       .order('created_at', { ascending: false }),
     supabase.from('categories').select('id, name').order('name'),
@@ -122,6 +122,8 @@ export default async function ConteudoPage({
                   categoryId={study.category_id}
                   categories={categories ?? []}
                   currentStatus={study.status}
+                  isFeatured={study.is_featured}
+                  featuredUntil={study.featured_until}
                 />
               </div>
             </div>

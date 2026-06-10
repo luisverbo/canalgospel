@@ -33,26 +33,25 @@ export function PreacherProfileClient() {
     if (!resolved) return
     if (!slug) { setNotFound(true); setLoading(false); return }
     const supabase = createClient()
-    Promise.all([
-      supabase
-        .from('preachers')
-        .select('id, display_name, slug, bio, church, city, photo_url, instagram, whatsapp, pix_key')
-        .eq('slug', slug)
-        .eq('status', 'active')
-        .maybeSingle(),
-      supabase
-        .from('studies')
-        .select('id, title, slug, body, youtube_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
-        .eq('status', 'published')
-        .order('published_at', { ascending: false })
-        .limit(20),
-    ]).then(([preacherResult, studiesResult]) => {
-      if (!preacherResult.data) { setNotFound(true); setLoading(false); return }
-      setPreacher(preacherResult.data as PreacherRow)
-      const all = (studiesResult.data as StudyCardType[] | null) ?? []
-      setStudies(all.filter((s) => s.preachers?.slug === slug))
-      setLoading(false)
-    })
+    supabase
+      .from('preachers')
+      .select('id, display_name, slug, bio, church, city, photo_url, instagram, whatsapp, pix_key')
+      .eq('slug', slug)
+      .eq('status', 'active')
+      .maybeSingle()
+      .then(async ({ data: preacherData }) => {
+        if (!preacherData) { setNotFound(true); setLoading(false); return }
+        setPreacher(preacherData as PreacherRow)
+        const { data: studiesData } = await supabase
+          .from('studies')
+          .select('id, title, slug, body, youtube_url, cover_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
+          .eq('status', 'published')
+          .eq('preacher_id', (preacherData as PreacherRow).id)
+          .order('published_at', { ascending: false })
+          .limit(50)
+        setStudies((studiesData as StudyCardType[] | null) ?? [])
+        setLoading(false)
+      })
   }, [slug, resolved])
 
   if (loading) {
@@ -112,16 +111,22 @@ export function PreacherProfileClient() {
         )}
 
         <div className="flex gap-3 flex-wrap">
+          {preacher.whatsapp && (
+            <a
+              href={`https://wa.me/${preacher.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(
+                `Olá! Conheci seu perfil no Canal Gospel e gostaria de convidar você. ${typeof window !== 'undefined' ? window.location.href : ''}`,
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-medium"
+            >
+              💬 Convidar
+            </a>
+          )}
           {preacher.instagram && (
             <a href={`https://instagram.com/${preacher.instagram}`} target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2E2860]/10 dark:bg-white/10 text-[#2E2860] dark:text-[#B5B0D8] text-sm font-medium">
               📸 Instagram
-            </a>
-          )}
-          {preacher.whatsapp && (
-            <a href={`https://wa.me/${preacher.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-medium">
-              💬 WhatsApp
             </a>
           )}
         </div>

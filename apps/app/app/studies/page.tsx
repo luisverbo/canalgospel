@@ -24,7 +24,7 @@ function StudiesContent() {
       supabase.from('categories').select('id, name, slug').order('sort_order'),
       supabase
         .from('studies')
-        .select('id, title, slug, body, youtube_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
+        .select('id, title, slug, body, youtube_url, cover_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
         .eq('status', 'published')
         .order('published_at', { ascending: false })
         .limit(50),

@@ -6,7 +6,7 @@ import { DevotionalCard } from '@/components/DevotionalCard'
 import { StudyCard } from '@/components/StudyCard'
 import type { StudyCard as StudyCardType, Devotional } from '@/lib/types'
 import Link from 'next/link'
-import { Settings, WandSparkles, ChevronRight } from 'lucide-react'
+import { Settings, WandSparkles, ChevronRight, Star } from 'lucide-react'
 
 function greeting(): string {
   const h = new Date().getHours()
@@ -18,11 +18,14 @@ function greeting(): string {
 export default function HomePage() {
   const [devotional, setDevotional] = useState<Devotional | null>(null)
   const [studies, setStudies] = useState<StudyCardType[]>([])
+  const [featured, setFeatured] = useState<StudyCardType[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const supabase = createClient()
     const today = new Date().toISOString().split('T')[0]
+    const nowIso = new Date().toISOString()
+    const studyCols = 'id, title, slug, body, youtube_url, cover_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)'
 
     Promise.all([
       supabase
@@ -34,13 +37,23 @@ export default function HomePage() {
         .maybeSingle(),
       supabase
         .from('studies')
-        .select('id, title, slug, body, youtube_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
+        .select(studyCols)
         .eq('status', 'published')
         .order('published_at', { ascending: false })
         .limit(10),
-    ]).then(([devotionalResult, studiesResult]) => {
+      // Em destaque: is_featured e (sem expiração ou ainda válido)
+      supabase
+        .from('studies')
+        .select(studyCols)
+        .eq('status', 'published')
+        .eq('is_featured', true)
+        .or(`featured_until.is.null,featured_until.gt.${nowIso}`)
+        .order('published_at', { ascending: false })
+        .limit(10),
+    ]).then(([devotionalResult, studiesResult, featuredResult]) => {
       setDevotional(devotionalResult.data as Devotional | null)
       setStudies((studiesResult.data as StudyCardType[] | null) ?? [])
+      setFeatured((featuredResult.data as StudyCardType[] | null) ?? [])
       setLoading(false)
     })
   }, [])
@@ -80,6 +93,20 @@ export default function HomePage() {
             </div>
             <ChevronRight size={20} strokeWidth={2} className="shrink-0 text-[#E0A943]" />
           </div>
+
+          {featured.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <Star size={18} strokeWidth={2} className="text-[#E0A943] fill-[#E0A943]" />
+                <h2 className="text-lg font-bold text-[#1E1B2E] dark:text-[#F3F1FA]">Em destaque</h2>
+              </div>
+              <div className="flex flex-col gap-3">
+                {featured.map((study) => (
+                  <StudyCard key={study.id} study={study} preacher={study.preachers} category={study.categories} />
+                ))}
+              </div>
+            </section>
+          )}
 
           <section>
             <div className="flex items-center justify-between mb-3">

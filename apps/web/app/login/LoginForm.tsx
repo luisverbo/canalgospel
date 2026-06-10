@@ -33,7 +33,7 @@ export function LoginForm() {
     const { data: profile } = await supabase
       .from('profiles').select('role').eq('id', user.id).single()
     if (profile?.role === 'admin') router.push('/admin')
-    else if (profile?.role === 'preacher') router.push('/parceiro')
+    else if (profile?.role === 'partner') router.push('/parceiro')
     else router.push('/admin')
   }
 

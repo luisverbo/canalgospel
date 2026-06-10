@@ -15,9 +15,10 @@ import {
 interface RichTextEditorProps {
   name: string
   initialHTML?: string
+  uploadAction?: (formData: FormData) => Promise<{ url?: string; error?: string }>
 }
 
-export function RichTextEditor({ name, initialHTML = '' }: RichTextEditorProps) {
+export function RichTextEditor({ name, initialHTML = '', uploadAction = uploadStudyImage }: RichTextEditorProps) {
   const [html, setHtml] = useState(initialHTML)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -65,7 +66,7 @@ export function RichTextEditor({ name, initialHTML = '' }: RichTextEditorProps) 
     try {
       const fd = new FormData()
       fd.set('file', file)
-      const result = await uploadStudyImage(fd)
+      const result = await uploadAction(fd)
       if (result.error || !result.url) throw new Error(result.error ?? 'Falha no upload')
       editor.chain().focus().setImage({ src: result.url }).run()
     } catch (err) {

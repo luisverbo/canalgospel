@@ -20,8 +20,8 @@ export default async function ParceiroLayout({
 
   const { data: preacher } = await supabase
     .from('preachers')
-    .select('name, photo_url')
-    .eq('profile_id', user.id)
+    .select('display_name, photo_url')
+    .eq('id', user.id)
     .single()
 
   return (
@@ -30,14 +30,14 @@ export default async function ParceiroLayout({
         <div className="px-6 py-5 border-b border-white/10">
           <div className="flex items-center gap-3">
             {preacher?.photo_url ? (
-              <img src={preacher.photo_url} alt={preacher.name} className="h-9 w-9 rounded-full object-cover" />
+              <img src={preacher.photo_url} alt={preacher.display_name} className="h-9 w-9 rounded-full object-cover" />
             ) : (
               <div className="h-9 w-9 rounded-full bg-[#E0A943]/30 flex items-center justify-center text-sm font-bold text-[#E0A943]">
-                {preacher?.name?.[0] ?? '?'}
+                {preacher?.display_name?.[0] ?? '?'}
               </div>
             )}
             <div>
-              <p className="font-semibold text-sm">{preacher?.name ?? 'Parceiro'}</p>
+              <p className="font-semibold text-sm">{preacher?.display_name ?? 'Parceiro'}</p>
               <p className="text-xs text-white/50">Painel Parceiro</p>
             </div>
           </div>

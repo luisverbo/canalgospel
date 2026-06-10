@@ -21,7 +21,7 @@ export function SavedStudies() {
     const supabase = createClient()
     const { data } = await supabase
       .from('studies')
-      .select('id, title, slug, body, youtube_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
+      .select('id, title, slug, body, youtube_url, cover_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
       .in('id', ids)
       .eq('status', 'published')
     setStudies((data as StudyCardType[] | null) ?? [])

@@ -23,7 +23,7 @@ function SearchContent() {
     const supabase = createClient()
     supabase
       .from('studies')
-      .select('id, title, slug, body, youtube_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
+      .select('id, title, slug, body, youtube_url, cover_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
       .eq('status', 'published')
       .or(`title.ilike.%${query}%,body.ilike.%${query}%`)
       .order('created_at', { ascending: false })
