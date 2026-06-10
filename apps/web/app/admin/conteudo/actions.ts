@@ -1,10 +1,10 @@
 'use server'
 
-import { createAdminSupabaseClient } from '@/lib/supabase/server'
+import { requireAdminClient } from '@/lib/supabase/admin-guard'
 import { revalidatePath } from 'next/cache'
 
 export async function approveStudy(studyId: string) {
-  const supabase = await createAdminSupabaseClient()
+  const supabase = await requireAdminClient()
   await supabase
     .from('studies')
     .update({ status: 'published', published_at: new Date().toISOString() })
@@ -13,13 +13,13 @@ export async function approveStudy(studyId: string) {
 }
 
 export async function rejectStudy(studyId: string) {
-  const supabase = await createAdminSupabaseClient()
+  const supabase = await requireAdminClient()
   await supabase.from('studies').update({ status: 'rejected' }).eq('id', studyId)
   revalidatePath('/admin/conteudo')
 }
 
 export async function unpublishStudy(studyId: string) {
-  const supabase = await createAdminSupabaseClient()
+  const supabase = await requireAdminClient()
   await supabase
     .from('studies')
     .update({ status: 'draft', published_at: null })
@@ -28,7 +28,7 @@ export async function unpublishStudy(studyId: string) {
 }
 
 export async function setCategoryAction(studyId: string, categoryId: string) {
-  const supabase = await createAdminSupabaseClient()
+  const supabase = await requireAdminClient()
   await supabase.from('studies').update({ category_id: categoryId }).eq('id', studyId)
   revalidatePath('/admin/conteudo')
 }

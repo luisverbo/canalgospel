@@ -1,11 +1,15 @@
 'use server'
 
-import { createAdminSupabaseClient } from '@/lib/supabase/server'
+import { requireAdminClient } from '@/lib/supabase/admin-guard'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+function htmlIsEmpty(html: string): boolean {
+  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() === ''
+}
+
 export async function updateStudy(studyId: string, formData: FormData) {
-  const supabase = await createAdminSupabaseClient()
+  const supabase = await requireAdminClient()
 
   const title = (formData.get('title') as string)?.trim()
   const body = (formData.get('body') as string) ?? ''
@@ -18,7 +22,7 @@ export async function updateStudy(studyId: string, formData: FormData) {
     .from('studies')
     .update({
       title,
-      body: body.trim() || ' ',
+      body: htmlIsEmpty(body) ? ' ' : body.trim(),
       youtube_url: youtubeUrl || null,
       category_id: categoryId || null,
     })

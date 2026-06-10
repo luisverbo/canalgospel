@@ -7,7 +7,7 @@ const URL_REGEX = /(https?:\/\/[^\s<]+[^\s<.,:;"')\]!?])/g
  * Detecta se o texto contém marcação HTML (de um editor rico).
  */
 export function looksLikeHtml(str: string): boolean {
-  return /<\/?(p|br|div|h[1-6]|ul|ol|li|strong|em|b|i|a|blockquote)\b/i.test(str)
+  return /<\/?(p|br|div|h[1-6]|ul|ol|li|strong|em|b|i|u|a|img|blockquote|s|mark|span)\b/i.test(str)
 }
 
 /**

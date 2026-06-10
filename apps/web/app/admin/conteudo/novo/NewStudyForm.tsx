@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createStudy } from './actions'
+import { RichTextEditor } from '../RichTextEditor'
 
 interface Category { id: string; name: string; kind: string }
 
@@ -83,16 +84,11 @@ export function NewStudyForm({ categories }: { categories: Category[] }) {
         </div>
       )}
 
-      {/* Body (só para texto) */}
+      {/* Body (só para texto) — editor rich text */}
       {contentType === 'text' && (
         <div>
           <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">Conteúdo *</label>
-          <textarea
-            name="body"
-            rows={10}
-            placeholder="Escreva o estudo aqui..."
-            className={`${inputCls} resize-y`}
-          />
+          <RichTextEditor name="body" />
         </div>
       )}
 

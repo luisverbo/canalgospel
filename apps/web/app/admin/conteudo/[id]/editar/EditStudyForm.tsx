@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateStudy } from './actions'
+import { RichTextEditor } from '../../RichTextEditor'
 
 interface Category { id: string; name: string; type?: string }
 
@@ -72,9 +73,12 @@ export function EditStudyForm({ study, categories }: { study: Study; categories:
         <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">
           {isVideo ? 'Descrição' : 'Conteúdo'}
         </label>
-        <textarea name="body" rows={isVideo ? 5 : 12} defaultValue={cleanBody}
-          placeholder={isVideo ? 'Descrição do vídeo...' : 'Escreva o estudo aqui...'}
-          className={`${inputCls} resize-y`} />
+        {isVideo ? (
+          <textarea name="body" rows={5} defaultValue={cleanBody}
+            placeholder="Descrição do vídeo..." className={`${inputCls} resize-y`} />
+        ) : (
+          <RichTextEditor name="body" initialHTML={cleanBody} />
+        )}
       </div>
 
       {error && (

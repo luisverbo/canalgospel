@@ -11,9 +11,7 @@
     "clean": "rm -rf .next"
   },
   "dependencies": {
-    "next": "14.2.4",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "@anthropic-ai/sdk": "^0.27.0",
     "@canal-gospel/supabase": "workspace:*",
     "@canal-gospel/ui": "workspace:*",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
@@ -21,7 +19,15 @@
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/ssr": "^0.4.0",
     "@supabase/supabase-js": "^2.43.4",
-    "@anthropic-ai/sdk": "^0.27.0"
+    "@tiptap/extension-image": "^3.26.0",
+    "@tiptap/extension-link": "^3.26.0",
+    "@tiptap/extension-text-align": "^3.26.0",
+    "@tiptap/extension-underline": "^3.26.0",
+    "@tiptap/react": "^3.26.0",
+    "@tiptap/starter-kit": "^3.26.0",
+    "next": "14.2.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/node": "^20.14.2",
