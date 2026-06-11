@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@canal-gospel/supabase'
 import { useSlug } from '@/lib/useSlug'
 import { StudyReader } from './StudyReader'
+import { canShowInterstitial, markInterstitialShown, shouldShowAds } from '@/lib/ads'
 
 interface Study {
   id: string
@@ -37,11 +38,24 @@ export function StudyPageClient() {
         if (!data) setNotFound404(true)
         else {
           setStudy(data as Study)
-          // registra leitura (best-effort; ignora falha caso a função não exista ainda)
           supabase.rpc('increment_study_view', { p_study_id: (data as Study).id }).then(
             () => {},
             () => {},
           )
+          // AdMob interstitial after study opens (frequency-limited, never during read)
+          if (shouldShowAds() && canShowInterstitial()) {
+            markInterstitialShown()
+            import('@capacitor/core').then(({ Capacitor }) => {
+              if (!Capacitor.isNativePlatform()) return
+              import('@capacitor-community/admob').then(({ AdMob }) => {
+                const adId = process.env.NEXT_PUBLIC_ADMOB_INTERSTITIAL_ID
+                  ?? 'ca-app-pub-3940256099942544/1033173712'
+                AdMob.prepareInterstitial({ adId, isTesting: process.env.NODE_ENV !== 'production' })
+                  .then(() => AdMob.showInterstitial())
+                  .catch(() => {})
+              }).catch(() => {})
+            })
+          }
         }
         setLoading(false)
       })

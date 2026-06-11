@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@canal-gospel/supabase'
 import { StudyCard } from '@/components/StudyCard'
+import { NativeAdCard } from '@/components/NativeAdCard'
 import type { StudyCard as StudyCardType } from '@/lib/types'
 import Link from 'next/link'
 import { Suspense } from 'react'
@@ -69,8 +70,11 @@ function StudiesContent() {
           {filtered.length === 0 && (
             <p className="text-center text-[#8A8797] py-12">Nenhum estudo encontrado.</p>
           )}
-          {filtered.map((study) => (
-            <StudyCard key={study.id} study={study} preacher={study.preachers} category={study.categories} />
+          {filtered.map((study, idx) => (
+            <div key={study.id}>
+              {idx > 0 && idx % 5 === 0 && <NativeAdCard />}
+              <StudyCard study={study} preacher={study.preachers} category={study.categories} />
+            </div>
           ))}
         </div>
       )}

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { BottomNav } from '@/components/BottomNav'
+import { AdBanner } from '@/components/AdBanner'
 import { ThemeProvider } from '@/lib/theme'
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ export default function RootLayout({
           <main className="min-h-[100dvh] pb-[calc(5rem+env(safe-area-inset-bottom,0px))]">
             {children}
           </main>
+          <AdBanner />
           <BottomNav />
         </ThemeProvider>
       </body>
