@@ -36,7 +36,7 @@ export function StudyCard({ study, preacher, category }: StudyCardProps) {
     <div className="relative flex items-center gap-3 bg-white dark:bg-[#211E2D] rounded-2xl p-3 border border-[#1E1B2E]/7 dark:border-white/7 active:scale-[0.98] transition-transform">
       {/* Link "esticado" cobre todo o card — clicar em qualquer área leva ao estudo */}
       <Link
-        href={`/studies/${study.slug}`}
+        href={`/studies?slug=${study.slug}`}
         aria-label={decodeHtml(study.title)}
         className="absolute inset-0 z-0 rounded-2xl"
       />
@@ -63,7 +63,7 @@ export function StudyCard({ study, preacher, category }: StudyCardProps) {
         <div className="flex items-center gap-1 mt-1 min-w-0">
           {preacher ? (
             <Link
-              href={`/profile/${preacher.slug}`}
+              href={`/profile?slug=${preacher.slug}`}
               className="relative z-10 flex items-center gap-1 min-w-0 hover:underline"
             >
               {preacher.photo_url ? (

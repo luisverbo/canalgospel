@@ -160,6 +160,21 @@ export function CampaignForm({
         </div>
       </div>
 
+      {/* Only show "activate" toggle when creating a new campaign */}
+      {!campaign && (
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input type="hidden" name="is_active" value="false" />
+          <input
+            type="checkbox"
+            name="is_active"
+            value="true"
+            defaultChecked
+            className="h-4 w-4 rounded border-[#1E1B2E]/20 text-[#2E2860] cursor-pointer"
+          />
+          <span className="text-sm text-[#1E1B2E]">Ativar campanha imediatamente</span>
+        </label>
+      )}
+
       <div className="flex justify-end gap-3 pt-2">
         <button type="button" onClick={onClose}
           className="px-5 py-2 rounded-xl border border-[#1E1B2E]/15 text-sm font-medium text-[#8A8797] hover:text-[#1E1B2E]">

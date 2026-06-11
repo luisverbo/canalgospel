@@ -89,7 +89,7 @@ export function StudyReader({
           <div className="flex flex-wrap items-center gap-x-2 text-sm mb-6">
             {preacher && (
               <Link
-                href={`/profile/${preacher.slug}`}
+                href={`/profile?slug=${preacher.slug}`}
                 className="flex items-center gap-1.5 font-semibold text-[#2E2860] dark:text-[#E0A943] hover:underline"
               >
                 {preacher.photo_url ? (

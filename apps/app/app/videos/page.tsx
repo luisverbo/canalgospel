@@ -70,7 +70,7 @@ export default function VideosPage() {
       {groups.map(({ preacher, studies }) => (
         <section key={preacher?.slug ?? '__none__'}>
           {preacher ? (
-            <Link href={`/profile/${preacher.slug}`} className="flex items-center gap-3 mb-3">
+            <Link href={`/profile?slug=${preacher.slug}`} className="flex items-center gap-3 mb-3">
               {preacher.photo_url ? (
                 <img src={preacher.photo_url} alt={preacher.display_name}
                   className="h-10 w-10 rounded-full object-cover border border-[#1E1B2E]/8 dark:border-white/10" />
@@ -92,7 +92,7 @@ export default function VideosPage() {
 
           <div className="flex flex-col gap-3">
             {studies.map((study) => (
-              <Link key={study.id} href={`/studies/${study.slug}`}>
+              <Link key={study.id} href={`/studies?slug=${study.slug}`}>
                 <div className="flex gap-3 bg-white dark:bg-[#211E2D] rounded-2xl overflow-hidden border border-[#1E1B2E]/7 dark:border-white/7 active:scale-[0.98] transition-transform">
                   <div className="h-20 w-28 shrink-0 bg-[#2E2860]/8 dark:bg-[#2E2860]/20 overflow-hidden">
                     {study.youtube_url && youTubeThumb(study.youtube_url) ? (

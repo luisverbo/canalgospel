@@ -21,8 +21,9 @@ interface PreacherRow {
   pix_key: string | null
 }
 
-export function PreacherProfileClient() {
-  const { slug, resolved } = useSlug('profile')
+export function PreacherProfileClient({ slugOverride }: { slugOverride?: string }) {
+  const { slug: slugFromPath, resolved } = useSlug('profile')
+  const slug = slugOverride !== undefined ? slugOverride : slugFromPath
 
   const [preacher, setPreacher] = useState<PreacherRow | null>(null)
   const [studies, setStudies] = useState<StudyCardType[]>([])
@@ -31,7 +32,8 @@ export function PreacherProfileClient() {
   const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
-    if (!resolved) return
+    // When slug comes from query param (slugOverride), skip waiting for path resolution
+    if (slugOverride === undefined && !resolved) return
     if (!slug) { setNotFound(true); setLoading(false); return }
     const supabase = createClient()
     supabase

@@ -13,6 +13,7 @@ export async function createCampaign(formData: FormData) {
   const starts_at = (formData.get('starts_at') as string) || null
   const ends_at = (formData.get('ends_at') as string) || null
   const weight = formData.get('weight') ? Number(formData.get('weight')) : 1
+  const is_active = formData.get('is_active') === 'true'
 
   if (!advertiser_name) return { error: 'Anunciante é obrigatório' }
   if (!target_url) return { error: 'URL de destino é obrigatória' }
@@ -26,7 +27,7 @@ export async function createCampaign(formData: FormData) {
     starts_at,
     ends_at,
     weight,
-    is_active: false,
+    is_active,
   })
 
   if (error) return { error: error.message }
