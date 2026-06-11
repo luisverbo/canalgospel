@@ -45,16 +45,17 @@ export function StudyPageClient() {
           // AdMob interstitial after study opens (frequency-limited, never during read)
           if (shouldShowAds() && canShowInterstitial()) {
             markInterstitialShown()
-            import('@capacitor/core').then(({ Capacitor }) => {
-              if (!Capacitor.isNativePlatform()) return
-              import('@capacitor-community/admob').then(({ AdMob }) => {
+            ;(async () => {
+              try {
+                const { Capacitor } = await import('@capacitor/core')
+                if (!Capacitor.isNativePlatform()) return
+                const { AdMob } = await import('@capacitor-community/admob')
                 const adId = process.env.NEXT_PUBLIC_ADMOB_INTERSTITIAL_ID
                   ?? 'ca-app-pub-3940256099942544/1033173712'
-                AdMob.prepareInterstitial({ adId, isTesting: process.env.NODE_ENV !== 'production' })
-                  .then(() => AdMob.showInterstitial())
-                  .catch(() => {})
-              }).catch(() => {})
-            })
+                await AdMob.prepareInterstitial({ adId, isTesting: true })
+                await AdMob.showInterstitial()
+              } catch { /* AdMob unavailable or no fill — not fatal */ }
+            })()
           }
         }
         setLoading(false)

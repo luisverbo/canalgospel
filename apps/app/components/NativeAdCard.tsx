@@ -9,20 +9,24 @@ export function NativeAdCard({ isSubscriber = false }: { isSubscriber?: boolean 
 
   useEffect(() => {
     if (!shouldShowAds(isSubscriber)) return
-    fetchActiveCampaigns('feed_native').then((campaigns) => {
-      const picked = pickCampaign(campaigns)
-      if (picked) {
-        setAd(picked)
-        recordImpression(picked.id)
-      }
-    })
+    fetchActiveCampaigns('feed_native')
+      .then((campaigns) => {
+        const picked = pickCampaign(campaigns)
+        if (picked) {
+          setAd(picked)
+          recordImpression(picked.id).catch(() => {})
+        }
+      })
+      .catch(() => {})
   }, [isSubscriber])
 
   if (!ad) return null
 
   const handleClick = () => {
-    recordClick(ad.id)
-    window.open(ad.target_url, '_blank', 'noopener,noreferrer')
+    recordClick(ad.id).catch(() => {})
+    try {
+      window.open(ad.target_url, '_blank', 'noopener,noreferrer')
+    } catch { /* ignore */ }
   }
 
   return (
@@ -32,7 +36,7 @@ export function NativeAdCard({ isSubscriber = false }: { isSubscriber?: boolean 
     >
       {ad.image_url ? (
         <div className="h-16 w-24 shrink-0 rounded-xl overflow-hidden">
-          <img src={ad.image_url} alt={ad.advertiser} className="w-full h-full object-cover" />
+          <img src={ad.image_url} alt={ad.advertiser_name} className="w-full h-full object-cover" />
         </div>
       ) : (
         <div className="h-16 w-24 shrink-0 rounded-xl bg-[#E0A943]/10 flex items-center justify-center text-2xl">

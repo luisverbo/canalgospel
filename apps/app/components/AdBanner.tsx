@@ -5,19 +5,33 @@ import { Capacitor } from '@capacitor/core'
 import { fetchActiveCampaigns, pickCampaign, recordImpression, recordClick, shouldShowAds } from '@/lib/ads'
 import type { AdCampaign } from '@/lib/ads'
 
+// AdMob is initialized at most once per app lifecycle.
+let admobInitialized = false
+
+async function initAdMob() {
+  if (admobInitialized) return
+  try {
+    const { AdMob } = await import('@capacitor-community/admob')
+    await AdMob.initialize({ initializeForTesting: true })
+    admobInitialized = true
+  } catch {
+    // Plugin unavailable or already initialized — safe to ignore
+  }
+}
+
 async function showAdMobBanner() {
   if (!Capacitor.isNativePlatform()) return
   try {
+    await initAdMob()
     const { AdMob, BannerAdSize, BannerAdPosition } = await import('@capacitor-community/admob')
-    await AdMob.initialize({ initializeForTesting: process.env.NODE_ENV !== 'production' })
     await AdMob.showBanner({
       adId: process.env.NEXT_PUBLIC_ADMOB_BANNER_ID ?? 'ca-app-pub-3940256099942544/6300978111',
       adSize: BannerAdSize.ADAPTIVE_BANNER,
       position: BannerAdPosition.BOTTOM_CENTER,
       margin: 56,
-      isTesting: process.env.NODE_ENV !== 'production',
+      isTesting: true,
     })
-  } catch { /* not on native or AdMob unavailable */ }
+  } catch { /* AdMob unavailable or no fill — not fatal */ }
 }
 
 async function hideAdMobBanner() {
@@ -29,38 +43,49 @@ async function hideAdMobBanner() {
 }
 
 export function AdBanner({ isSubscriber = false }: { isSubscriber?: boolean }) {
-  const [ownAd, setOwnAd] = useState<AdCampaign | null | undefined>(undefined) // undefined = loading
+  const [ownAd, setOwnAd] = useState<AdCampaign | null | undefined>(undefined)
 
   useEffect(() => {
     if (!shouldShowAds(isSubscriber)) {
       setOwnAd(null)
-      hideAdMobBanner()
+      hideAdMobBanner().catch(() => {})
       return
     }
 
-    fetchActiveCampaigns('banner').then((campaigns) => {
-      const picked = pickCampaign(campaigns)
-      setOwnAd(picked ?? null)
+    let cancelled = false
 
-      if (picked) {
-        recordImpression(picked.id)
-        hideAdMobBanner() // own ad takes the slot — never show both
-      } else {
-        showAdMobBanner() // fallback to AdMob (native only)
-      }
-    })
+    fetchActiveCampaigns('banner')
+      .then((campaigns) => {
+        if (cancelled) return
+        const picked = pickCampaign(campaigns)
+        setOwnAd(picked ?? null)
 
-    return () => { hideAdMobBanner() }
+        if (picked) {
+          recordImpression(picked.id).catch(() => {})
+          hideAdMobBanner().catch(() => {})
+        } else {
+          showAdMobBanner().catch(() => {})
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setOwnAd(null)
+      })
+
+    return () => {
+      cancelled = true
+      hideAdMobBanner().catch(() => {})
+    }
   }, [isSubscriber])
 
   if (!shouldShowAds(isSubscriber)) return null
-  if (ownAd === undefined) return null // still loading
+  if (ownAd === undefined) return null
 
-  // Own campaign takes the slot
   if (ownAd) {
     const handleClick = () => {
-      recordClick(ownAd.id)
-      window.open(ownAd.target_url, '_blank', 'noopener,noreferrer')
+      recordClick(ownAd.id).catch(() => {})
+      try {
+        window.open(ownAd.target_url, '_blank', 'noopener,noreferrer')
+      } catch { /* ignore */ }
     }
     return (
       <button
@@ -79,9 +104,6 @@ export function AdBanner({ isSubscriber = false }: { isSubscriber?: boolean }) {
     )
   }
 
-  // No own campaign. AdMob banner renders natively (positioned by AdMob SDK) — nothing in React tree.
-  if (Capacitor.isNativePlatform()) return null
-
-  // Web browser: no ad to show
+  // No own campaign — AdMob banner renders natively, nothing in React tree.
   return null
 }
