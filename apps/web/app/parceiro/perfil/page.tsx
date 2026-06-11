@@ -7,12 +7,30 @@ export default async function ParceiroPerfilPage() {
   const { data: { user } } = await sessionClient.auth.getUser()
   if (!user) redirect('/login')
 
-  const supabase = await createAdminSupabaseClient()
-  const { data: preacher } = await supabase
-    .from('preachers')
-    .select('id, slug, display_name, bio, church, city, photo_url, instagram, whatsapp, pix_key')
-    .eq('id', user.id)
-    .single()
+  let preacher: {
+    id: string
+    slug: string
+    display_name: string
+    bio: string | null
+    church: string | null
+    city: string | null
+    photo_url: string | null
+    instagram: string | null
+    whatsapp: string | null
+    pix_key: string | null
+  } | null = null
+
+  try {
+    const supabase = await createAdminSupabaseClient()
+    const { data } = await supabase
+      .from('preachers')
+      .select('id, slug, display_name, bio, church, city, photo_url, instagram, whatsapp, pix_key')
+      .eq('id', user.id)
+      .maybeSingle()
+    preacher = data
+  } catch (err) {
+    console.error('[parceiro/perfil] erro ao carregar perfil:', err)
+  }
 
   if (!preacher) {
     return (

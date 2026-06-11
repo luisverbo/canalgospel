@@ -21,13 +21,27 @@ export default async function ParceiroEstudosPage() {
   const { data: { user } } = await sessionClient.auth.getUser()
   if (!user) redirect('/login')
 
-  const supabase = await createAdminSupabaseClient()
+  let studies: Array<{
+    id: string
+    title: string
+    status: string
+    content_type: string | null
+    youtube_url: string | null
+    published_at: string | null
+    categories: { name: string } | null
+  }> | null = null
 
-  const { data: studies } = await supabase
-    .from('studies')
-    .select('id, title, status, content_type, youtube_url, published_at, categories(name)')
-    .eq('preacher_id', user.id)
-    .order('created_at', { ascending: false })
+  try {
+    const supabase = await createAdminSupabaseClient()
+    const { data } = await supabase
+      .from('studies')
+      .select('id, title, status, content_type, youtube_url, published_at, categories(name)')
+      .eq('preacher_id', user.id)
+      .order('created_at', { ascending: false })
+    studies = data as typeof studies
+  } catch (err) {
+    console.error('[parceiro/estudos] erro ao carregar estudos:', err)
+  }
 
   return (
     <div>

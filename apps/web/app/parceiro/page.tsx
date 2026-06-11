@@ -21,13 +21,37 @@ export default async function ParceiroDashboardPage() {
   const { data: { user } } = await sessionClient.auth.getUser()
   if (!user) redirect('/login')
 
-  const supabase = await createAdminSupabaseClient()
+  let preacher: { id: string; display_name: string; status: string; auto_publish: boolean } | null = null
+  let all: Array<{ id: string; title: string; status: string; view_count: number | null; published_at: string | null; created_at: string }> = []
 
-  const { data: preacher } = await supabase
-    .from('preachers')
-    .select('id, display_name, status, auto_publish')
-    .eq('id', user.id)
-    .single()
+  try {
+    const supabase = await createAdminSupabaseClient()
+
+    const { data } = await supabase
+      .from('preachers')
+      .select('id, display_name, status, auto_publish')
+      .eq('id', user.id)
+      .maybeSingle()
+    preacher = data
+
+    if (preacher) {
+      const { data: studies } = await supabase
+        .from('studies')
+        .select('id, title, status, view_count, published_at, created_at')
+        .eq('preacher_id', preacher.id)
+        .order('created_at', { ascending: false })
+      all = studies ?? []
+    }
+  } catch (err) {
+    console.error('[parceiro/dashboard] erro ao carregar dados:', err)
+    return (
+      <div className="text-center py-16">
+        <p className="text-4xl mb-4">⚠️</p>
+        <h2 className="text-xl font-bold text-[#2E2860] mb-2">Não foi possível carregar seu painel</h2>
+        <p className="text-[#8A8797]">Tente novamente em instantes. Se persistir, fale com o administrador.</p>
+      </div>
+    )
+  }
 
   if (!preacher) {
     return (
@@ -39,13 +63,6 @@ export default async function ParceiroDashboardPage() {
     )
   }
 
-  const { data: studies } = await supabase
-    .from('studies')
-    .select('id, title, status, view_count, published_at, created_at')
-    .eq('preacher_id', preacher.id)
-    .order('created_at', { ascending: false })
-
-  const all = studies ?? []
   const publishedCount = all.filter((s) => s.status === 'published').length
   const pendingCount = all.filter((s) => s.status === 'pending').length
   const totalViews = all
