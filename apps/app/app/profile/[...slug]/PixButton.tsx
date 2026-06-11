@@ -9,30 +9,59 @@ export function PixButton({
   pixKey: string
   preacherName: string
 }) {
+  const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(pixKey)
     setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    setTimeout(() => setCopied(false), 2500)
   }
 
   return (
-    <div className="bg-[#E0A943]/10 rounded-2xl p-4 border border-[#E0A943]/30">
-      <p className="text-sm font-semibold text-[#B07A20] mb-2">
-        💛 Apoie {preacherName} via PIX
-      </p>
-      <div className="flex items-center gap-2">
-        <code className="flex-1 text-xs bg-white rounded-lg px-3 py-2 text-[#1E1B2E] border border-[#E0A943]/20 truncate">
-          {pixKey}
-        </code>
+    <div>
+      {/* CTA button — dourado, proeminente */}
+      {!open && (
         <button
-          onClick={handleCopy}
-          className="shrink-0 px-4 py-2 bg-[#E0A943] text-[#1E1B2E] rounded-lg text-sm font-semibold transition-colors hover:bg-[#EFC06A]"
+          onClick={() => setOpen(true)}
+          className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-[#E0A943] hover:bg-[#EFC06A] active:scale-[0.98] transition-all rounded-2xl text-[#1E1B2E] text-sm font-bold shadow-sm"
         >
-          {copied ? '✓ Copiado' : 'Copiar'}
+          <span className="text-base">💛</span>
+          Apoiar · PIX
         </button>
-      </div>
+      )}
+
+      {/* Expanded: chave PIX + copiar */}
+      {open && (
+        <div className="bg-[#E0A943]/12 dark:bg-[#E0A943]/8 rounded-2xl p-4 border border-[#E0A943]/40">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-bold text-[#B07A20] dark:text-[#E0A943]">
+              💛 Apoie {preacherName} via PIX
+            </p>
+            <button
+              onClick={() => { setOpen(false); setCopied(false) }}
+              className="text-xs text-[#8A8797] hover:text-[#1E1B2E] dark:hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 text-xs bg-white dark:bg-[#1E1B2E] rounded-xl px-3 py-2.5 text-[#1E1B2E] dark:text-[#F3F1FA] border border-[#E0A943]/25 truncate font-mono">
+              {pixKey}
+            </code>
+            <button
+              onClick={handleCopy}
+              className={`shrink-0 px-4 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                copied
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-[#E0A943] hover:bg-[#EFC06A] text-[#1E1B2E]'
+              }`}
+            >
+              {copied ? '✓ Copiado' : 'Copiar'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
