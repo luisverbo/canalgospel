@@ -1,0 +1,116 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:           # manual trigger from Actions tab
+  push:
+    branches:
+      - claude/dazzling-cori-r2mpfy
+      - main
+    paths:
+      - 'apps/app/**'
+      - 'packages/**'
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ── Checkout ─────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Java (required by Gradle / Android SDK) ──────────────────
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # ── Android SDK ───────────────────────────────────────────────
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      # ── Node + pnpm ───────────────────────────────────────────────
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.18.0'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '9.15.4'
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.dir }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── Next.js static export ─────────────────────────────────────
+      - name: Build Next.js static export (apps/app)
+        working-directory: apps/app
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_ADMOB_BANNER_ID: ${{ secrets.NEXT_PUBLIC_ADMOB_BANNER_ID }}
+          NEXT_PUBLIC_ADMOB_INTERSTITIAL_ID: ${{ secrets.NEXT_PUBLIC_ADMOB_INTERSTITIAL_ID }}
+        run: npx next build
+
+      # ── Capacitor: add Android platform ──────────────────────────
+      # The android/ directory is gitignored — recreate it fresh each build.
+      - name: Add Android platform (cap add android)
+        working-directory: apps/app
+        run: npx @capacitor/cli add android
+
+      # ── Inject AdMob App ID into AndroidManifest.xml ─────────────
+      # Must be done after `cap add android` (which creates the manifest)
+      # and before `cap sync` (which copies assets but does NOT touch the manifest).
+      - name: Patch AndroidManifest — AdMob App ID
+        working-directory: apps/app
+        run: |
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          # Insert meta-data just before the first <provider> element
+          sed -i 's|<provider|<meta-data\n            android:name="com.google.android.gms.ads.APPLICATION_ID"\n            android:value="ca-app-pub-6980980696861631~1710536055" />\n\n        <provider|' \
+            "$MANIFEST"
+          echo "=== Manifest após patch ==="
+          cat "$MANIFEST"
+
+      # ── Sync Capacitor (copies web assets + registers plugins) ────
+      - name: Sync Capacitor to Android
+        working-directory: apps/app
+        run: npx @capacitor/cli sync android
+
+      # ── Gradle cache ──────────────────────────────────────────────
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('apps/app/android/**/*.gradle*', 'apps/app/android/**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      # ── Build APK ─────────────────────────────────────────────────
+      - name: Build debug APK
+        working-directory: apps/app/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      # ── Upload artifact ───────────────────────────────────────────
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: canal-gospel-debug-${{ github.run_number }}
+          path: apps/app/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+          if-no-files-found: error
