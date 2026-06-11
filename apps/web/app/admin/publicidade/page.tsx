@@ -1,9 +1,9 @@
 import { createAdminSupabaseClient } from '@/lib/supabase/server'
 import { CampaignActions, NewCampaignButton } from './CampaignActions'
 
-const PLACEMENT_LABEL: Record<string, string> = {
+const SLOT_LABEL: Record<string, string> = {
   banner: 'Banner',
-  native: 'Feed Nativo',
+  feed_native: 'Feed Nativo',
   interstitial: 'Intersticial',
 }
 
@@ -22,8 +22,29 @@ export default async function PublicidadePage() {
 
   const { data: campaigns } = await supabase
     .from('ad_campaigns')
-    .select('id, title, advertiser, destination_url, placement, image_url, active, starts_at, ends_at, budget_impressions, total_impressions, total_clicks, created_at')
+    .select('id, advertiser_name, target_url, slot, image_url, is_active, starts_at, ends_at, weight, created_at')
     .order('created_at', { ascending: false })
+
+  const campaignIds = (campaigns ?? []).map((c) => c.id)
+
+  // Count impressions and clicks per campaign from the detail tables
+  const [{ data: impressionRows }, { data: clickRows }] = await Promise.all([
+    campaignIds.length
+      ? supabase.from('ad_impressions').select('campaign_id').in('campaign_id', campaignIds)
+      : Promise.resolve({ data: [] }),
+    campaignIds.length
+      ? supabase.from('ad_clicks').select('campaign_id').in('campaign_id', campaignIds)
+      : Promise.resolve({ data: [] }),
+  ])
+
+  const impressionCount = new Map<string, number>()
+  const clickCount = new Map<string, number>()
+  for (const r of impressionRows ?? []) {
+    impressionCount.set(r.campaign_id, (impressionCount.get(r.campaign_id) ?? 0) + 1)
+  }
+  for (const r of clickRows ?? []) {
+    clickCount.set(r.campaign_id, (clickCount.get(r.campaign_id) ?? 0) + 1)
+  }
 
   return (
     <div>
@@ -44,18 +65,18 @@ export default async function PublicidadePage() {
 
       <div className="flex flex-col gap-4">
         {campaigns?.map((c) => {
-          const impressions = c.total_impressions ?? 0
-          const clicks = c.total_clicks ?? 0
           const now = new Date()
           const started = !c.starts_at || new Date(c.starts_at) <= now
           const notEnded = !c.ends_at || new Date(c.ends_at) >= now
           const withinPeriod = started && notEnded
+          const impressions = impressionCount.get(c.id) ?? 0
+          const clicks = clickCount.get(c.id) ?? 0
 
           return (
             <div key={c.id} className="bg-white rounded-2xl border border-[#1E1B2E]/8 p-5">
               <div className="flex items-start gap-4">
                 {c.image_url ? (
-                  <img src={c.image_url} alt={c.title}
+                  <img src={c.image_url} alt={c.advertiser_name}
                     className="h-16 w-28 shrink-0 rounded-xl object-cover border border-[#1E1B2E]/8" />
                 ) : (
                   <div className="h-16 w-28 shrink-0 rounded-xl bg-[#2E2860]/5 flex items-center justify-center text-2xl">
@@ -66,24 +87,31 @@ export default async function PublicidadePage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      c.active && withinPeriod
+                      c.is_active && withinPeriod
                         ? 'bg-emerald-100 text-emerald-700'
-                        : c.active
+                        : c.is_active
                         ? 'bg-amber-100 text-amber-700'
                         : 'bg-[#1E1B2E]/5 text-[#8A8797]'
                     }`}>
-                      {c.active && withinPeriod ? 'Ativo' : c.active ? 'Fora do período' : 'Inativo'}
+                      {c.is_active && withinPeriod ? 'Ativo' : c.is_active ? 'Fora do período' : 'Inativo'}
                     </span>
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#2E2860]/8 text-[#2E2860]">
-                      {PLACEMENT_LABEL[c.placement] ?? c.placement}
+                      {SLOT_LABEL[c.slot] ?? c.slot}
                     </span>
+                    {c.weight && c.weight > 1 && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#E0A943]/10 text-[#9a6f1a]">
+                        Peso {c.weight}
+                      </span>
+                    )}
                   </div>
 
-                  <h3 className="font-semibold text-[#1E1B2E]">{c.title}</h3>
-                  <p className="text-xs text-[#8A8797]">{c.advertiser}</p>
+                  <h3 className="font-semibold text-[#1E1B2E]">{c.advertiser_name}</h3>
+                  <a href={c.target_url} target="_blank" rel="noopener noreferrer"
+                    className="text-xs text-[#2E2860] underline truncate block max-w-xs">
+                    {c.target_url}
+                  </a>
                   <p className="text-xs text-[#8A8797] mt-0.5">
                     {fmtDate(c.starts_at)} → {fmtDate(c.ends_at)}
-                    {c.budget_impressions ? ` · Limite: ${c.budget_impressions.toLocaleString('pt-BR')} impr.` : ''}
                   </p>
 
                   {/* Stats */}
@@ -106,15 +134,14 @@ export default async function PublicidadePage() {
 
               <CampaignActions campaign={{
                 id: c.id,
-                title: c.title,
-                advertiser: c.advertiser,
-                destination_url: c.destination_url,
-                placement: c.placement,
+                advertiser_name: c.advertiser_name,
+                target_url: c.target_url,
+                slot: c.slot,
                 image_url: c.image_url,
                 starts_at: c.starts_at,
                 ends_at: c.ends_at,
-                budget_impressions: c.budget_impressions,
-                active: c.active,
+                weight: c.weight,
+                is_active: c.is_active,
               }} />
             </div>
           )

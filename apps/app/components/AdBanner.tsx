@@ -60,7 +60,7 @@ export function AdBanner({ isSubscriber = false }: { isSubscriber?: boolean }) {
   if (ownAd) {
     const handleClick = () => {
       recordClick(ownAd.id)
-      window.open(ownAd.destination_url, '_blank', 'noopener,noreferrer')
+      window.open(ownAd.target_url, '_blank', 'noopener,noreferrer')
     }
     return (
       <button
@@ -69,12 +69,11 @@ export function AdBanner({ isSubscriber = false }: { isSubscriber?: boolean }) {
         style={{ minHeight: 56 }}
       >
         {ownAd.image_url && (
-          <img src={ownAd.image_url} alt={ownAd.advertiser} className="h-9 w-14 shrink-0 rounded-lg object-cover" />
+          <img src={ownAd.image_url} alt={ownAd.advertiser_name} className="h-9 w-14 shrink-0 rounded-lg object-cover" />
         )}
         <div className="flex-1 min-w-0 text-left">
           <span className="text-[9px] font-bold text-[#9a6f1a] uppercase tracking-wide">Anúncio</span>
-          <p className="text-xs font-medium text-[#1E1B2E] dark:text-[#F3F1FA] truncate">{ownAd.title}</p>
-          <p className="text-[10px] text-[#8A8797] truncate">{ownAd.advertiser}</p>
+          <p className="text-xs font-medium text-[#1E1B2E] dark:text-[#F3F1FA] truncate">{ownAd.advertiser_name}</p>
         </div>
       </button>
     )

@@ -7,21 +7,35 @@ import { uploadAdImage } from './upload-actions'
 
 interface Campaign {
   id: string
-  title: string
-  advertiser: string
-  destination_url: string
-  placement: 'banner' | 'interstitial' | 'native'
+  advertiser_name: string
+  target_url: string
+  slot: string
   image_url: string | null
   starts_at: string | null
   ends_at: string | null
-  budget_impressions: number | null
+  weight: number | null
 }
 
-const PLACEMENTS = [
-  { value: 'banner', label: 'Banner (faixa fixa)' },
-  { value: 'native', label: 'Feed Nativo (entre estudos)' },
-  { value: 'interstitial', label: 'Intersticial' },
+const SLOTS = [
+  { value: 'banner', label: 'Banner (faixa fixa)', hint: '640 × 100 px (JPG ou PNG)', ratio: 6.4 },
+  { value: 'feed_native', label: 'Feed Nativo (entre estudos)', hint: '600 × 500 px (JPG ou PNG)', ratio: 1.2 },
+  { value: 'interstitial', label: 'Intersticial (tela cheia)', hint: '1080 × 1920 px (JPG ou PNG)', ratio: 0.5625 },
 ]
+
+function checkAspectRatio(file: File, expectedRatio: number): Promise<string | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const actual = img.width / img.height
+      const deviation = Math.abs(actual - expectedRatio) / expectedRatio
+      resolve(deviation > 0.25 ? `Proporção da imagem (${img.width}×${img.height}) está muito diferente do recomendado para este slot.` : null)
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null) }
+    img.src = url
+  })
+}
 
 export function CampaignForm({
   campaign,
@@ -32,15 +46,24 @@ export function CampaignForm({
 }) {
   const router = useRouter()
   const [error, setError] = useState('')
+  const [warning, setWarning] = useState('')
   const [loading, setLoading] = useState(false)
   const [imageUrl, setImageUrl] = useState(campaign?.image_url ?? '')
   const [uploading, setUploading] = useState(false)
+  const [slot, setSlot] = useState(campaign?.slot ?? 'banner')
   const fileRef = useRef<HTMLInputElement>(null)
+
+  const currentSlot = SLOTS.find((s) => s.value === slot) ?? SLOTS[0]
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     setUploading(true)
+    setWarning('')
+
+    const ratioWarning = await checkAspectRatio(file, currentSlot.ratio)
+    if (ratioWarning) setWarning(ratioWarning)
+
     const fd = new FormData()
     fd.append('file', file)
     const res = await uploadAdImage(fd)
@@ -70,38 +93,50 @@ export function CampaignForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-[#8A8797] mb-1">Nome interno</label>
-          <input name="title" required defaultValue={campaign?.title}
+          <label className="block text-xs font-semibold text-[#8A8797] mb-1">Anunciante</label>
+          <input name="advertiser_name" required defaultValue={campaign?.advertiser_name}
+            placeholder="Ex.: Livraria Esperança"
             className="w-full px-3 py-2 rounded-xl border border-[#1E1B2E]/15 text-sm outline-none focus:border-[#2E2860]" />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-[#8A8797] mb-1">Anunciante</label>
-          <input name="advertiser" required defaultValue={campaign?.advertiser}
+          <label className="block text-xs font-semibold text-[#8A8797] mb-1">Peso (prioridade)</label>
+          <input name="weight" type="number" min="1" defaultValue={campaign?.weight ?? 1}
             className="w-full px-3 py-2 rounded-xl border border-[#1E1B2E]/15 text-sm outline-none focus:border-[#2E2860]" />
         </div>
       </div>
 
       <div>
         <label className="block text-xs font-semibold text-[#8A8797] mb-1">URL de destino</label>
-        <input name="destination_url" type="url" required defaultValue={campaign?.destination_url}
+        <input name="target_url" type="url" required defaultValue={campaign?.target_url}
+          placeholder="https://..."
           className="w-full px-3 py-2 rounded-xl border border-[#1E1B2E]/15 text-sm outline-none focus:border-[#2E2860]" />
       </div>
 
       <div>
         <label className="block text-xs font-semibold text-[#8A8797] mb-1">Slot</label>
-        <select name="placement" required defaultValue={campaign?.placement ?? 'banner'}
+        <select name="slot" required value={slot} onChange={(e) => setSlot(e.target.value)}
           className="w-full px-3 py-2 rounded-xl border border-[#1E1B2E]/15 text-sm outline-none focus:border-[#2E2860] bg-white">
-          {PLACEMENTS.map((p) => (
-            <option key={p.value} value={p.value}>{p.label}</option>
+          {SLOTS.map((s) => (
+            <option key={s.value} value={s.value}>{s.label}</option>
           ))}
         </select>
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-[#8A8797] mb-1">Imagem do anúncio</label>
+        <label className="block text-xs font-semibold text-[#8A8797] mb-1">
+          Imagem do anúncio
+          <span className="ml-2 font-normal text-[#8A8797]">Recomendado: {currentSlot.hint}</span>
+        </label>
+        {warning && (
+          <p className="mb-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+            ⚠️ {warning}
+          </p>
+        )}
         <div className="flex items-center gap-3">
           {imageUrl && (
-            <img src={imageUrl} alt="preview" className="h-16 w-28 rounded-lg object-cover border border-[#1E1B2E]/10" />
+            <img src={imageUrl} alt="preview"
+              className="h-14 rounded-lg object-cover border border-[#1E1B2E]/10"
+              style={{ aspectRatio: String(currentSlot.ratio) }} />
           )}
           <button type="button" onClick={() => fileRef.current?.click()}
             disabled={uploading}
@@ -112,7 +147,7 @@ export function CampaignForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-semibold text-[#8A8797] mb-1">Início</label>
           <input name="starts_at" type="date" defaultValue={campaign?.starts_at?.slice(0, 10) ?? ''}
@@ -121,13 +156,6 @@ export function CampaignForm({
         <div>
           <label className="block text-xs font-semibold text-[#8A8797] mb-1">Fim</label>
           <input name="ends_at" type="date" defaultValue={campaign?.ends_at?.slice(0, 10) ?? ''}
-            className="w-full px-3 py-2 rounded-xl border border-[#1E1B2E]/15 text-sm outline-none focus:border-[#2E2860]" />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-[#8A8797] mb-1">Limite de impressões</label>
-          <input name="budget_impressions" type="number" min="0"
-            defaultValue={campaign?.budget_impressions ?? ''}
-            placeholder="Ilimitado"
             className="w-full px-3 py-2 rounded-xl border border-[#1E1B2E]/15 text-sm outline-none focus:border-[#2E2860]" />
         </div>
       </div>

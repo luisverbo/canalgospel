@@ -9,7 +9,7 @@ export function NativeAdCard({ isSubscriber = false }: { isSubscriber?: boolean 
 
   useEffect(() => {
     if (!shouldShowAds(isSubscriber)) return
-    fetchActiveCampaigns('native').then((campaigns) => {
+    fetchActiveCampaigns('feed_native').then((campaigns) => {
       const picked = pickCampaign(campaigns)
       if (picked) {
         setAd(picked)
@@ -22,7 +22,7 @@ export function NativeAdCard({ isSubscriber = false }: { isSubscriber?: boolean 
 
   const handleClick = () => {
     recordClick(ad.id)
-    window.open(ad.destination_url, '_blank', 'noopener,noreferrer')
+    window.open(ad.target_url, '_blank', 'noopener,noreferrer')
   }
 
   return (
@@ -43,8 +43,7 @@ export function NativeAdCard({ isSubscriber = false }: { isSubscriber?: boolean 
         <span className="inline-block text-[9px] font-bold text-[#9a6f1a] bg-[#E0A943]/15 px-1.5 py-0.5 rounded-full mb-1 uppercase tracking-wide">
           Anúncio
         </span>
-        <p className="text-sm font-medium text-[#1E1B2E] dark:text-[#F3F1FA] line-clamp-2">{ad.title}</p>
-        <p className="text-[11px] text-[#8A8797] dark:text-white/40 mt-0.5">{ad.advertiser}</p>
+        <p className="text-sm font-medium text-[#1E1B2E] dark:text-[#F3F1FA] line-clamp-2">{ad.advertiser_name}</p>
       </div>
     </button>
   )

@@ -7,15 +7,14 @@ import { toggleCampaignActive, deleteCampaign } from './actions'
 
 interface Campaign {
   id: string
-  title: string
-  advertiser: string
-  destination_url: string
-  placement: 'banner' | 'interstitial' | 'native'
+  advertiser_name: string
+  target_url: string
+  slot: string
   image_url: string | null
   starts_at: string | null
   ends_at: string | null
-  budget_impressions: number | null
-  active: boolean
+  weight: number | null
+  is_active: boolean
 }
 
 export function CampaignActions({ campaign }: { campaign: Campaign }) {
@@ -24,7 +23,7 @@ export function CampaignActions({ campaign }: { campaign: Campaign }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [pending, setPending] = useState(false)
 
-  const run = async (fn: () => Promise<void>) => {
+  const run = async (fn: () => Promise<unknown>) => {
     setPending(true)
     await fn()
     setPending(false)
@@ -42,15 +41,15 @@ export function CampaignActions({ campaign }: { campaign: Campaign }) {
   return (
     <div className="flex items-center gap-2 flex-wrap mt-3">
       <button
-        onClick={() => run(() => toggleCampaignActive(campaign.id, !campaign.active))}
+        onClick={() => run(() => toggleCampaignActive(campaign.id, !campaign.is_active))}
         disabled={pending}
         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ${
-          campaign.active
+          campaign.is_active
             ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
             : 'bg-[#1E1B2E]/5 text-[#8A8797] hover:bg-[#1E1B2E]/10'
         }`}
       >
-        {campaign.active ? '● Ativo' : '○ Inativo'}
+        {campaign.is_active ? '● Ativo' : '○ Inativo'}
       </button>
 
       <button onClick={() => setEditing(true)} disabled={pending}
@@ -61,7 +60,7 @@ export function CampaignActions({ campaign }: { campaign: Campaign }) {
       {confirmDelete ? (
         <>
           <span className="text-xs text-red-700 font-medium">Confirmar?</span>
-          <button onClick={() => run(() => deleteCampaign(campaign.id).then(() => {}))} disabled={pending}
+          <button onClick={() => run(() => deleteCampaign(campaign.id))} disabled={pending}
             className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 disabled:opacity-50">
             Excluir
           </button>
