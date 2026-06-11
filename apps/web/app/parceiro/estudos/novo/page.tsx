@@ -8,10 +8,10 @@ export default async function NovoEstudoPage() {
   const { data: { user } } = await sessionClient.auth.getUser()
   if (!user) redirect('/login')
 
-  const supabase = createAdminSupabaseClient()
+  const supabase = await createAdminSupabaseClient()
 
   const [{ data: preacher }, { data: categories }] = await Promise.all([
-    supabase.from('preachers').select('id, status').eq('id', user.id).single(),
+    supabase.from('preachers').select('id, status').eq('id', user.id).maybeSingle(),
     supabase.from('categories').select('id, name, kind').order('name'),
   ])
 

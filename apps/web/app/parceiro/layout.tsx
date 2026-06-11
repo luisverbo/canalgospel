@@ -22,7 +22,7 @@ export default async function ParceiroLayout({
     .from('preachers')
     .select('display_name, photo_url')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   return (
     <div className="flex min-h-screen">

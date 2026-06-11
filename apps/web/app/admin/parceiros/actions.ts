@@ -146,3 +146,23 @@ export async function setPartnerAutoPublish(preacherId: string, autoPublish: boo
   await supabase.from('preachers').update({ auto_publish: autoPublish }).eq('id', preacherId)
   revalidatePath('/admin/parceiros')
 }
+
+export async function deletePartner(preacherId: string): Promise<{ error?: string }> {
+  const supabase = await requireAdminClient()
+
+  // 1) Disassociate studies (preserve content, remove FK)
+  await supabase.from('studies').update({ preacher_id: null }).eq('preacher_id', preacherId)
+
+  // 2) Delete preacher profile
+  await supabase.from('preachers').delete().eq('id', preacherId)
+
+  // 3) Delete app profile
+  await supabase.from('profiles').delete().eq('id', preacherId)
+
+  // 4) Delete auth user
+  const { error } = await supabase.auth.admin.deleteUser(preacherId)
+  if (error) return { error: error.message }
+
+  revalidatePath('/admin/parceiros')
+  return {}
+}

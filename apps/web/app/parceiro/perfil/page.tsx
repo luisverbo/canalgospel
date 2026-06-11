@@ -7,7 +7,7 @@ export default async function ParceiroPerfilPage() {
   const { data: { user } } = await sessionClient.auth.getUser()
   if (!user) redirect('/login')
 
-  const supabase = createAdminSupabaseClient()
+  const supabase = await createAdminSupabaseClient()
   const { data: preacher } = await supabase
     .from('preachers')
     .select('id, slug, display_name, bio, church, city, photo_url, instagram, whatsapp, pix_key')

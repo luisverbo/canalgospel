@@ -21,7 +21,7 @@ export default async function ParceiroDashboardPage() {
   const { data: { user } } = await sessionClient.auth.getUser()
   if (!user) redirect('/login')
 
-  const supabase = createAdminSupabaseClient()
+  const supabase = await createAdminSupabaseClient()
 
   const { data: preacher } = await supabase
     .from('preachers')

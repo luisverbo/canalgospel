@@ -20,7 +20,7 @@ export default async function EditarEstudoParceiroPage({
   const { data: { user } } = await sessionClient.auth.getUser()
   if (!user) redirect('/login')
 
-  const supabase = createAdminSupabaseClient()
+  const supabase = await createAdminSupabaseClient()
 
   const [{ data: study }, { data: categories }] = await Promise.all([
     supabase
