@@ -1,6 +1,7 @@
 import { createAdminSupabaseClient } from '@/lib/supabase/server'
 import { Badge } from '@canal-gospel/ui'
 import { StudyModerationActions } from './StudyModerationActions'
+import { ConteudoFilters } from './ConteudoFilters'
 import Link from 'next/link'
 
 const TAB_STATUSES = {
@@ -25,21 +26,40 @@ const STATUS_BADGE: Record<string, { label: string; variant: 'gold' | 'green' | 
 export default async function ConteudoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ aba?: string }>
+  searchParams: Promise<{ aba?: string; busca?: string; categoria?: string; pregador?: string }>
 }) {
   const params = await searchParams
   const aba = (params.aba ?? 'pendentes') as keyof typeof TAB_STATUSES
   const statuses = TAB_STATUSES[aba] ?? TAB_STATUSES.pendentes
+  const busca = params.busca?.trim() ?? ''
+  const categoria = params.categoria ?? ''
+  const pregador = params.pregador ?? ''
 
   const supabase = await createAdminSupabaseClient()
 
-  const [studiesResult, { data: categories }] = await Promise.all([
-    supabase
-      .from('studies')
-      .select('id, title, body, youtube_url, status, is_featured, featured_until, created_at, preacher_id, category_id, preachers(display_name), categories(name)')
-      .in('status', statuses)
-      .order('created_at', { ascending: false }),
+  // Build filtered query
+  let query = supabase
+    .from('studies')
+    .select('id, title, body, youtube_url, status, is_featured, featured_until, created_at, preacher_id, category_id, preachers(display_name), categories(name)')
+    .in('status', statuses)
+    .order('created_at', { ascending: false })
+
+  if (busca) {
+    query = query.ilike('title', `%${busca}%`)
+  }
+  if (categoria) {
+    query = query.eq('category_id', categoria)
+  }
+  if (pregador === '__sistema__') {
+    query = query.is('preacher_id', null)
+  } else if (pregador) {
+    query = query.eq('preacher_id', pregador)
+  }
+
+  const [studiesResult, { data: categories }, { data: preachers }] = await Promise.all([
+    query,
     supabase.from('categories').select('id, name').order('name'),
+    supabase.from('preachers').select('id, display_name').eq('status', 'active').order('display_name'),
   ])
   const studies = studiesResult.data
   const studiesError = studiesResult.error
@@ -71,8 +91,19 @@ export default async function ConteudoPage({
         ))}
       </div>
 
+      {/* Filters */}
+      <ConteudoFilters
+        aba={aba}
+        categories={categories ?? []}
+        preachers={preachers ?? []}
+        busca={busca}
+        categoria={categoria}
+        pregador={pregador}
+      />
+
       <p className="text-[#8A8797] mb-4 text-sm">
         {studies?.length ?? 0} {aba === 'pendentes' ? 'aguardando aprovação' : aba === 'publicados' ? 'publicados' : 'rejeitados/rascunhos'}
+        {(busca || categoria || pregador) && ' (filtrado)'}
       </p>
 
       <div className="flex flex-col gap-4">
@@ -94,6 +125,7 @@ export default async function ConteudoPage({
                     : <Badge variant="red">Sem categoria</Badge>
                   }
                   {study.youtube_url && <Badge variant="indigo">YouTube</Badge>}
+                  {study.is_featured && <Badge variant="gold">★ Destaque</Badge>}
                 </div>
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="font-semibold text-[#1E1B2E] mb-1 line-clamp-2">{study.title}</h3>
@@ -103,7 +135,7 @@ export default async function ConteudoPage({
                   </Link>
                 </div>
                 <p className="text-sm text-[#8A8797]">
-                  {(study.preachers as { display_name: string } | null)?.display_name ?? 'Sem pregador'}
+                  {(study.preachers as { display_name: string } | null)?.display_name ?? 'Sistema'}
                 </p>
                 {study.youtube_url && (
                   <a href={study.youtube_url} target="_blank" rel="noopener noreferrer"
@@ -134,7 +166,9 @@ export default async function ConteudoPage({
           <div className="text-center py-16 bg-white rounded-2xl border border-[#1E1B2E]/8">
             <p className="text-4xl mb-3">{aba === 'pendentes' ? '✅' : '📭'}</p>
             <p className="text-[#8A8797]">
-              {aba === 'pendentes' ? 'Nenhum conteúdo pendente.' : 'Nenhum conteúdo aqui.'}
+              {busca || categoria || pregador
+                ? 'Nenhum resultado para os filtros aplicados.'
+                : aba === 'pendentes' ? 'Nenhum conteúdo pendente.' : 'Nenhum conteúdo aqui.'}
             </p>
           </div>
         )}

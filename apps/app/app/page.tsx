@@ -18,6 +18,7 @@ function greeting(): string {
 export default function HomePage() {
   const [devotional, setDevotional] = useState<Devotional | null>(null)
   const [featured, setFeatured] = useState<StudyCardType[]>([])
+  const [system, setSystem] = useState<StudyCardType[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -34,6 +35,7 @@ export default function HomePage() {
         .order('date', { ascending: false })
         .limit(1)
         .maybeSingle(),
+      // Destaques ativos (sistema + parceiro com is_featured)
       supabase
         .from('studies')
         .select(studyCols)
@@ -41,13 +43,25 @@ export default function HomePage() {
         .eq('is_featured', true)
         .or(`featured_until.is.null,featured_until.gt.${nowIso}`)
         .order('published_at', { ascending: false })
+        .limit(10),
+      // Conteúdo do sistema não destacado (preacher_id IS NULL)
+      supabase
+        .from('studies')
+        .select(studyCols)
+        .eq('status', 'published')
+        .eq('is_featured', false)
+        .is('preacher_id', null)
+        .order('published_at', { ascending: false })
         .limit(20),
-    ]).then(([devotionalResult, featuredResult]) => {
+    ]).then(([devotionalResult, featuredResult, systemResult]) => {
       setDevotional(devotionalResult.data as Devotional | null)
       setFeatured((featuredResult.data as StudyCardType[] | null) ?? [])
+      setSystem((systemResult.data as StudyCardType[] | null) ?? [])
       setLoading(false)
     })
   }, [])
+
+  const allHome = [...featured, ...system]
 
   return (
     <div className="flex flex-col gap-6 px-4 pt-6">
@@ -93,17 +107,16 @@ export default function HomePage() {
               </div>
               <Link href="/studies" className="text-sm font-semibold text-[#E0A943]">Ver todos</Link>
             </div>
-            {featured.length > 0 ? (
+            {allHome.length > 0 ? (
               <div className="flex flex-col gap-3">
-                {featured.map((study) => (
+                {allHome.map((study) => (
                   <StudyCard key={study.id} study={study} preacher={study.preachers} category={study.categories} />
                 ))}
               </div>
             ) : (
               <div className="flex flex-col items-center py-10 text-center">
                 <p className="text-3xl mb-2">✨</p>
-                <p className="text-sm text-[#8A8797]">Nenhum destaque no momento.</p>
-                <p className="text-xs text-[#8A8797]/70 mt-1">Explore todos os estudos →</p>
+                <p className="text-sm text-[#8A8797]">Nenhum conteúdo publicado ainda.</p>
               </div>
             )}
           </section>
