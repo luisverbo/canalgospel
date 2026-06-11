@@ -60,18 +60,31 @@ export function StudyCard({ study, preacher, category }: StudyCardProps) {
         <h3 className="font-medium text-sm text-[#1E1B2E] dark:text-[#F3F1FA] leading-snug line-clamp-2">
           {decodeHtml(study.title)}
         </h3>
-        <p className="text-[11px] text-[#8A8797] dark:text-white/40 mt-1 truncate">
+        <div className="flex items-center gap-1 mt-1 min-w-0">
           {preacher ? (
             <Link
               href={`/profile/${preacher.slug}`}
-              className="relative z-10 hover:underline font-medium text-[#2E2860] dark:text-[#B5B0D8]"
+              className="relative z-10 flex items-center gap-1 min-w-0 hover:underline"
             >
-              {decodeHtml(preacher.display_name)}
+              {preacher.photo_url ? (
+                <img src={preacher.photo_url} alt={decodeHtml(preacher.display_name)}
+                  className="h-4 w-4 rounded-full object-cover shrink-0 border border-[#2E2860]/15 dark:border-white/15" />
+              ) : (
+                <span className="h-4 w-4 rounded-full bg-[#2E2860]/10 dark:bg-[#E0A943]/20 flex items-center justify-center text-[8px] font-bold text-[#2E2860] dark:text-[#E0A943] shrink-0">
+                  {preacher.display_name[0]}
+                </span>
+              )}
+              <span className="text-[11px] font-semibold text-[#2E2860] dark:text-[#E0A943] truncate">
+                {decodeHtml(preacher.display_name)}
+              </span>
             </Link>
           ) : null}
-          {preacher && study.read_time_min ? ' · ' : ''}
-          {study.read_time_min ? `${study.read_time_min} min` : ''}
-        </p>
+          {preacher && study.read_time_min ? (
+            <span className="text-[11px] text-[#8A8797] dark:text-white/40 shrink-0"> · {study.read_time_min} min</span>
+          ) : study.read_time_min ? (
+            <span className="text-[11px] text-[#8A8797] dark:text-white/40">{study.read_time_min} min</span>
+          ) : null}
+        </div>
       </div>
 
       {/* Acima do link esticado para permanecer clicável */}

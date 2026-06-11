@@ -39,6 +39,7 @@ export default function HomePage() {
         .from('studies')
         .select(studyCols)
         .eq('status', 'published')
+        .is('preacher_id', null)
         .order('published_at', { ascending: false })
         .limit(10),
       // Em destaque: is_featured e (sem expiração ou ainda válido)

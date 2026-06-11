@@ -86,20 +86,35 @@ export function StudyReader({
         </h1>
 
         {(preacher || study.published_at || study.read_time_min) && (
-          <div className="flex flex-wrap items-center gap-x-1.5 text-sm mb-6 text-[#8A8797] dark:text-white/40">
+          <div className="flex flex-wrap items-center gap-x-2 text-sm mb-6">
             {preacher && (
-              <Link href={`/profile/${preacher.slug}`} className="font-medium hover:underline">
+              <Link
+                href={`/profile/${preacher.slug}`}
+                className="flex items-center gap-1.5 font-semibold text-[#2E2860] dark:text-[#E0A943] hover:underline"
+              >
+                {preacher.photo_url ? (
+                  <img src={preacher.photo_url} alt={decodeHtml(preacher.display_name)}
+                    className="h-6 w-6 rounded-full object-cover border border-[#2E2860]/20 dark:border-[#E0A943]/40 shrink-0" />
+                ) : (
+                  <span className="h-6 w-6 rounded-full bg-[#2E2860]/10 dark:bg-[#E0A943]/20 flex items-center justify-center text-[10px] font-bold text-[#2E2860] dark:text-[#E0A943] shrink-0">
+                    {preacher.display_name[0]}
+                  </span>
+                )}
                 {decodeHtml(preacher.display_name)}
               </Link>
             )}
-            {preacher && (study.published_at || study.read_time_min) && <span>·</span>}
+            {preacher && (study.published_at || study.read_time_min) && (
+              <span className="text-[#8A8797] dark:text-white/30">·</span>
+            )}
             {study.published_at && (
-              <span>{new Date(study.published_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+              <span className="text-[#8A8797] dark:text-white/40">
+                {new Date(study.published_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+              </span>
             )}
             {study.read_time_min && (
               <>
-                {(preacher || study.published_at) && <span>·</span>}
-                <span>{study.read_time_min} min de leitura</span>
+                {(preacher || study.published_at) && <span className="text-[#8A8797] dark:text-white/30">·</span>}
+                <span className="text-[#8A8797] dark:text-white/40">{study.read_time_min} min de leitura</span>
               </>
             )}
           </div>
