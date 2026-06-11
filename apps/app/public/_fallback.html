@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      margin: 0;
+      background: #FAF7F1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .s {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #2E2860;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="s"></div>
+  <script>
+    // Capacitor errorPath fallback — preserves the intended path so useSlug can recover it.
+    try {
+      var p = window.location.pathname.replace(/\/$/, '') || '/';
+      sessionStorage.setItem('__cap_nav', p);
+      var first = p.split('/').filter(Boolean)[0] || '';
+      var shells = { studies: '/studies/_/', profile: '/profile/_/' };
+      window.location.replace(shells[first] || '/');
+    } catch (e) {
+      window.location.replace('/');
+    }
+  </script>
+</body>
+</html>

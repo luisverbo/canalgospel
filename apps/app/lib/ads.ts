@@ -17,17 +17,28 @@ export async function fetchActiveCampaigns(slot: string): Promise<AdCampaign[]> 
     const supabase = createClient()
     const now = new Date().toISOString()
 
-    const { data } = await supabase
+    // Fetch active campaigns for the slot; filter dates client-side to avoid
+    // complex chained .or() PostgREST syntax that can produce unexpected results.
+    const { data, error } = await supabase
       .from('ad_campaigns')
-      .select('id, advertiser_name, image_url, target_url, slot')
+      .select('id, advertiser_name, image_url, target_url, slot, starts_at, ends_at')
       .eq('slot', slot)
       .eq('is_active', true)
-      .or(`starts_at.is.null,starts_at.lte.${now}`)
-      .or(`ends_at.is.null,ends_at.gte.${now}`)
       .order('weight', { ascending: false })
-      .limit(5)
+      .limit(20)
 
-    return (data as AdCampaign[] | null) ?? []
+    if (error) console.warn('[ads] fetchActiveCampaigns error:', error.message)
+
+    // Apply date range filter client-side
+    const filtered = ((data as (AdCampaign & { starts_at: string | null; ends_at: string | null })[] | null) ?? [])
+      .filter((c) => {
+        if (c.starts_at && new Date(c.starts_at) > new Date(now)) return false
+        if (c.ends_at && new Date(c.ends_at) < new Date(now)) return false
+        return true
+      })
+      .slice(0, 5)
+
+    return filtered
   } catch {
     return []
   }

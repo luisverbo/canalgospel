@@ -6,6 +6,10 @@ const config: CapacitorConfig = {
   webDir: 'out',
   server: {
     androidScheme: 'https',
+    // Fallback for any URL Capacitor cannot serve from the static bundle.
+    // The page saves the original path to sessionStorage and redirects to
+    // the correct pre-generated shell so the client-side router can recover.
+    errorPath: '/_fallback.html',
   },
   plugins: {
     SplashScreen: {
