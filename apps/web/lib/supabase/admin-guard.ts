@@ -18,5 +18,5 @@ export async function requireAdminClient() {
 
   if (profile?.role !== 'admin') throw new Error('Acesso negado: apenas administradores')
 
-  return createAdminSupabaseClient()
+  return await createAdminSupabaseClient()
 }

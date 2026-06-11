@@ -2,7 +2,7 @@ import { createAdminSupabaseClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 
 export default async function AdminDashboardPage() {
-  const supabase = createAdminSupabaseClient()
+  const supabase = await createAdminSupabaseClient()
 
   const today = new Date().toISOString().split('T')[0]
 
