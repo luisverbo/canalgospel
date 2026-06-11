@@ -94,13 +94,13 @@ export function StudyReader({
               >
                 {preacher.photo_url ? (
                   <img src={preacher.photo_url} alt={decodeHtml(preacher.display_name)}
-                    className="h-6 w-6 rounded-full object-cover border border-[#2E2860]/20 dark:border-[#E0A943]/40 shrink-0" />
+                    className="h-8 w-8 rounded-full object-cover border border-[#2E2860]/20 dark:border-[#E0A943]/40 shrink-0" />
                 ) : (
-                  <span className="h-6 w-6 rounded-full bg-[#2E2860]/10 dark:bg-[#E0A943]/20 flex items-center justify-center text-[10px] font-bold text-[#2E2860] dark:text-[#E0A943] shrink-0">
+                  <span className="h-8 w-8 rounded-full bg-[#2E2860]/10 dark:bg-[#E0A943]/20 flex items-center justify-center text-xs font-bold text-[#2E2860] dark:text-[#E0A943] shrink-0">
                     {preacher.display_name[0]}
                   </span>
                 )}
-                {decodeHtml(preacher.display_name)}
+                <span className="text-base">{decodeHtml(preacher.display_name)}</span>
               </Link>
             )}
             {preacher && (study.published_at || study.read_time_min) && (

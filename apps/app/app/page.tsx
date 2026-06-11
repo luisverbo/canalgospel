@@ -17,7 +17,6 @@ function greeting(): string {
 
 export default function HomePage() {
   const [devotional, setDevotional] = useState<Devotional | null>(null)
-  const [studies, setStudies] = useState<StudyCardType[]>([])
   const [featured, setFeatured] = useState<StudyCardType[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -39,21 +38,12 @@ export default function HomePage() {
         .from('studies')
         .select(studyCols)
         .eq('status', 'published')
-        .is('preacher_id', null)
-        .order('published_at', { ascending: false })
-        .limit(10),
-      // Em destaque: is_featured e (sem expiração ou ainda válido)
-      supabase
-        .from('studies')
-        .select(studyCols)
-        .eq('status', 'published')
         .eq('is_featured', true)
         .or(`featured_until.is.null,featured_until.gt.${nowIso}`)
         .order('published_at', { ascending: false })
-        .limit(10),
-    ]).then(([devotionalResult, studiesResult, featuredResult]) => {
+        .limit(20),
+    ]).then(([devotionalResult, featuredResult]) => {
       setDevotional(devotionalResult.data as Devotional | null)
-      setStudies((studiesResult.data as StudyCardType[] | null) ?? [])
       setFeatured((featuredResult.data as StudyCardType[] | null) ?? [])
       setLoading(false)
     })
@@ -95,33 +85,27 @@ export default function HomePage() {
             <ChevronRight size={20} strokeWidth={2} className="shrink-0 text-[#E0A943]" />
           </div>
 
-          {featured.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
                 <Star size={18} strokeWidth={2} className="text-[#E0A943] fill-[#E0A943]" />
                 <h2 className="text-lg font-bold text-[#1E1B2E] dark:text-[#F3F1FA]">Em destaque</h2>
               </div>
+              <Link href="/studies" className="text-sm font-semibold text-[#E0A943]">Ver todos</Link>
+            </div>
+            {featured.length > 0 ? (
               <div className="flex flex-col gap-3">
                 {featured.map((study) => (
                   <StudyCard key={study.id} study={study} preacher={study.preachers} category={study.categories} />
                 ))}
               </div>
-            </section>
-          )}
-
-          <section>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-[#1E1B2E] dark:text-[#F3F1FA]">Estudos Recentes</h2>
-              <Link href="/studies" className="text-sm font-semibold text-[#E0A943]">Ver todos</Link>
-            </div>
-            <div className="flex flex-col gap-3">
-              {studies.map((study) => (
-                <StudyCard key={study.id} study={study} preacher={study.preachers} category={study.categories} />
-              ))}
-              {studies.length === 0 && (
-                <p className="text-center text-[#8A8797] py-8">Nenhum estudo publicado ainda.</p>
-              )}
-            </div>
+            ) : (
+              <div className="flex flex-col items-center py-10 text-center">
+                <p className="text-3xl mb-2">✨</p>
+                <p className="text-sm text-[#8A8797]">Nenhum destaque no momento.</p>
+                <p className="text-xs text-[#8A8797]/70 mt-1">Explore todos os estudos →</p>
+              </div>
+            )}
           </section>
         </>
       )}
