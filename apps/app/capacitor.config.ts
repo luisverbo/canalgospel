@@ -13,6 +13,11 @@ const config: CapacitorConfig = {
       backgroundColor: '#2E2860',
       showSpinner: false,
     },
+    AdMob: {
+      // App ID is declared in AndroidManifest.xml meta-data (required by Google SDK).
+      // initializeForTesting must be false in production builds.
+      initializeForTesting: false,
+    },
   },
 }
 

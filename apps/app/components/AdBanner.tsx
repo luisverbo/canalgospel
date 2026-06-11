@@ -65,8 +65,8 @@ export function AdBanner({ isSubscriber = false }: { isSubscriber?: boolean }) {
     return (
       <button
         onClick={handleClick}
-        className="w-full flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-[#211E2D] border-t border-[#E0A943]/30 active:scale-[0.99] transition-transform"
-        style={{ minHeight: 56 }}
+        className="fixed left-0 right-0 z-40 flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-[#211E2D] border-t border-[#E0A943]/30 active:scale-[0.99] transition-transform"
+        style={{ bottom: 56, minHeight: 56 }}
       >
         {ownAd.image_url && (
           <img src={ownAd.image_url} alt={ownAd.advertiser_name} className="h-9 w-14 shrink-0 rounded-lg object-cover" />
@@ -79,16 +79,9 @@ export function AdBanner({ isSubscriber = false }: { isSubscriber?: boolean }) {
     )
   }
 
-  // No own campaign. AdMob banner renders natively — nothing to show in React tree.
+  // No own campaign. AdMob banner renders natively (positioned by AdMob SDK) — nothing in React tree.
   if (Capacitor.isNativePlatform()) return null
 
-  // Web browser placeholder (dev preview)
-  return (
-    <div
-      className="w-full flex items-center justify-center border-t border-[#1E1B2E]/8 dark:border-white/8 bg-[#FAF7F1] dark:bg-[#17141F]"
-      style={{ minHeight: 56 }}
-    >
-      <p className="text-[10px] text-[#8A8797]/50">Publicidade</p>
-    </div>
-  )
+  // Web browser: no ad to show
+  return null
 }
