@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react'
 import { fetchActiveCampaigns, pickCampaign, recordImpression, recordClick, shouldShowAds } from '@/lib/ads'
 import type { AdCampaign } from '@/lib/ads'
 
-export function NativeAdCard({ isSubscriber = false }: { isSubscriber?: boolean }) {
+export function NativeAdCard() {
   const [ad, setAd] = useState<AdCampaign | null>(null)
 
   useEffect(() => {
-    if (!shouldShowAds(isSubscriber)) return
+    if (!shouldShowAds()) return
     fetchActiveCampaigns('feed_native')
       .then((campaigns) => {
         const picked = pickCampaign(campaigns)
@@ -18,15 +18,13 @@ export function NativeAdCard({ isSubscriber = false }: { isSubscriber?: boolean 
         }
       })
       .catch(() => {})
-  }, [isSubscriber])
+  }, [])
 
   if (!ad) return null
 
   const handleClick = () => {
     recordClick(ad.id).catch(() => {})
-    try {
-      window.open(ad.target_url, '_blank', 'noopener,noreferrer')
-    } catch { /* ignore */ }
+    try { window.open(ad.target_url, '_blank', 'noopener,noreferrer') } catch { /* ignore */ }
   }
 
   return (

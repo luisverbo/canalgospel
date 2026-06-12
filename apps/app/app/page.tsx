@@ -88,16 +88,18 @@ export default function HomePage() {
           {devotional && <DevotionalCard devotional={devotional} />}
 
           {/* Card IA — Plano Pregador */}
-          <div className="flex items-center gap-4 bg-[#1E1B2E] dark:bg-[#2E2860]/40 rounded-2xl p-4">
-            <div className="h-11 w-11 shrink-0 rounded-xl bg-[#E0A943] flex items-center justify-center">
-              <WandSparkles size={20} strokeWidth={1.8} className="text-[#1E1B2E]" />
+          <Link href="/sermon-assistant">
+            <div className="flex items-center gap-4 bg-[#1E1B2E] dark:bg-[#2E2860]/40 rounded-2xl p-4 active:scale-[0.98] transition-transform">
+              <div className="h-11 w-11 shrink-0 rounded-xl bg-[#E0A943] flex items-center justify-center">
+                <WandSparkles size={20} strokeWidth={1.8} className="text-[#1E1B2E]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-medium text-sm">Monte seu sermão com IA</p>
+                <p className="text-[#A9A4C4] text-xs mt-0.5">Plano Pregador · sem anúncios</p>
+              </div>
+              <ChevronRight size={20} strokeWidth={2} className="shrink-0 text-[#E0A943]" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white font-medium text-sm">Monte seu sermão com IA</p>
-              <p className="text-[#A9A4C4] text-xs mt-0.5">Plano Pregador · sem anúncios</p>
-            </div>
-            <ChevronRight size={20} strokeWidth={2} className="shrink-0 text-[#E0A943]" />
-          </div>
+          </Link>
 
           <section>
             <div className="flex items-center justify-between mb-3">

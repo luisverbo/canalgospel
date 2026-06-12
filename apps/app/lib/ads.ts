@@ -1,7 +1,8 @@
 import { createClient } from '@canal-gospel/supabase'
+import { getIsSubscriber } from './subscription'
 
-export function shouldShowAds(_isSubscriber = false): boolean {
-  return !_isSubscriber
+export function shouldShowAds(): boolean {
+  return !getIsSubscriber()
 }
 
 export interface AdCampaign {
@@ -17,8 +18,6 @@ export async function fetchActiveCampaigns(slot: string): Promise<AdCampaign[]> 
     const supabase = createClient()
     const now = new Date().toISOString()
 
-    // Fetch active campaigns for the slot; filter dates client-side to avoid
-    // complex chained .or() PostgREST syntax that can produce unexpected results.
     const { data, error } = await supabase
       .from('ad_campaigns')
       .select('id, advertiser_name, image_url, target_url, slot, starts_at, ends_at')
@@ -29,7 +28,6 @@ export async function fetchActiveCampaigns(slot: string): Promise<AdCampaign[]> 
 
     if (error) console.warn('[ads] fetchActiveCampaigns error:', error.message)
 
-    // Apply date range filter client-side
     const filtered = ((data as (AdCampaign & { starts_at: string | null; ends_at: string | null })[] | null) ?? [])
       .filter((c) => {
         if (c.starts_at && new Date(c.starts_at) > new Date(now)) return false

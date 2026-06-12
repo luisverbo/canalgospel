@@ -5,7 +5,6 @@ import { Capacitor } from '@capacitor/core'
 import { fetchActiveCampaigns, pickCampaign, recordImpression, recordClick, shouldShowAds } from '@/lib/ads'
 import type { AdCampaign } from '@/lib/ads'
 
-// AdMob is initialized at most once per app lifecycle.
 let admobInitialized = false
 
 async function initAdMob() {
@@ -14,9 +13,7 @@ async function initAdMob() {
     const { AdMob } = await import('@capacitor-community/admob')
     await AdMob.initialize({ initializeForTesting: true })
     admobInitialized = true
-  } catch {
-    // Plugin unavailable or already initialized — safe to ignore
-  }
+  } catch { /* plugin unavailable — safe to ignore */ }
 }
 
 async function showAdMobBanner() {
@@ -42,11 +39,11 @@ async function hideAdMobBanner() {
   } catch { /* ignore */ }
 }
 
-export function AdBanner({ isSubscriber = false }: { isSubscriber?: boolean }) {
+export function AdBanner() {
   const [ownAd, setOwnAd] = useState<AdCampaign | null | undefined>(undefined)
 
   useEffect(() => {
-    if (!shouldShowAds(isSubscriber)) {
+    if (!shouldShowAds()) {
       setOwnAd(null)
       hideAdMobBanner().catch(() => {})
       return
@@ -75,17 +72,15 @@ export function AdBanner({ isSubscriber = false }: { isSubscriber?: boolean }) {
       cancelled = true
       hideAdMobBanner().catch(() => {})
     }
-  }, [isSubscriber])
+  }, [])
 
-  if (!shouldShowAds(isSubscriber)) return null
+  if (!shouldShowAds()) return null
   if (ownAd === undefined) return null
 
   if (ownAd) {
     const handleClick = () => {
       recordClick(ownAd.id).catch(() => {})
-      try {
-        window.open(ownAd.target_url, '_blank', 'noopener,noreferrer')
-      } catch { /* ignore */ }
+      try { window.open(ownAd.target_url, '_blank', 'noopener,noreferrer') } catch { /* ignore */ }
     }
     return (
       <button
@@ -104,6 +99,5 @@ export function AdBanner({ isSubscriber = false }: { isSubscriber?: boolean }) {
     )
   }
 
-  // No own campaign — AdMob banner renders natively, nothing in React tree.
   return null
 }
