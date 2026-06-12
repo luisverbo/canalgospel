@@ -113,12 +113,12 @@ export function SettingsClient() {
           <span className="text-sm text-[#1E1B2E] dark:text-[#D8D5E4]">Versão</span>
           <span className="text-sm text-[#8A8797]">1.0.0</span>
         </div>
-        <a href="https://canalgospel.com.br/privacidade" target="_blank" rel="noopener noreferrer"
+        <a href="https://canalgospel.vercel.app/privacidade" target="_blank" rel="noopener noreferrer"
           className="px-4 py-3 flex items-center justify-between">
           <span className="text-sm text-[#1E1B2E] dark:text-[#D8D5E4]">Política de Privacidade</span>
           <span className="text-[#8A8797]">→</span>
         </a>
-        <a href="https://canalgospel.com.br/termos" target="_blank" rel="noopener noreferrer"
+        <a href="https://canalgospel.vercel.app/termos" target="_blank" rel="noopener noreferrer"
           className="px-4 py-3 flex items-center justify-between">
           <span className="text-sm text-[#1E1B2E] dark:text-[#D8D5E4]">Termos de Uso</span>
           <span className="text-[#8A8797]">→</span>
