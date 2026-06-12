@@ -40,3 +40,12 @@ export async function createDevotional(formData: FormData) {
   revalidatePath('/admin/devocional')
   return { success: true }
 }
+
+export async function deleteDevotional(id: string, date: string) {
+  const supabase = await requireAdminClient()
+  await supabase.from('daily_devotionals').delete().eq('id', id)
+  await supabase.from('ai_devotionals').delete().eq('date', date).in('status', ['approved', 'pending', 'discarded'])
+  revalidatePath('/admin/devocional')
+  revalidatePath('/admin/agente')
+  return {}
+}
