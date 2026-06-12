@@ -72,6 +72,11 @@ export function ApprovalQueue({ devotionals: initial }: { devotionals: Devotiona
                 if (ok) setEditingId(null)
               }} className="flex flex-col gap-3">
                 <div>
+                  <label className="text-xs font-semibold text-[#8A8797] mb-1 block">Data agendada</label>
+                  <input name="date" type="date" defaultValue={d.date} required
+                    className="w-48 px-3 py-1.5 rounded-lg border border-[#1E1B2E]/15 text-sm outline-none focus:border-[#2E2860]" />
+                </div>
+                <div>
                   <label className="text-xs font-semibold text-[#8A8797] mb-1 block">Referência</label>
                   <input name="verse_ref" defaultValue={d.verse_ref} required
                     className="w-full px-3 py-1.5 rounded-lg border border-[#1E1B2E]/15 text-sm outline-none focus:border-[#2E2860]" />

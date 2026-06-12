@@ -110,23 +110,24 @@ export async function generateDevotional() {
     ? `DIRETRIZES DE ESTILO E ÊNFASE:\n${settings.doctrine_instructions}\n\n`
     : ''
 
-  const prompt = `Você é um escritor de devocionais cristãos. Escreva um devocional curto e original em português do Brasil.
+  const prompt = `Você é um escritor de devocionais cristãos. Escreva um devocional CURTO e original em português do Brasil.
 
 ${doctrineBlock}TEMA DO DIA: ${themeText}
 
 Requisitos:
 - Escolha um versículo bíblico relevante ao tema (da Bíblia ARC ou NVI)
-- Reflexão original de 150-250 palavras, tom de ensino e encorajamento
-- Inclua uma breve aplicação prática no final
+- Escreva UMA reflexão de 3-4 frases sobre o versículo
+- Finalize com UMA frase de aplicação prática direta
+- Total máximo: 130 palavras no campo "reflection"
 - Conteúdo 100% original, fundamentado na Bíblia
 - NÃO copie obras de terceiros nem mencione nomes de autores, pregadores ou ministérios
-- Escreva como se você mesmo fosse o autor — voz pastoral direta
+- Voz pastoral direta, tom de encorajamento, leitura rápida no celular
 
 Responda APENAS com JSON válido (sem blocos de código markdown):
 {
   "verse_ref": "Livro Capítulo:Versículo (ARC)",
   "verse_text": "Texto completo do versículo",
-  "reflection": "Reflexão e aplicação (150-250 palavras)"
+  "reflection": "Reflexão (3-4 frases) + 1 frase de aplicação prática — máximo 130 palavras"
 }`
 
   try {
@@ -136,7 +137,7 @@ Responda APENAS com JSON válido (sem blocos de código markdown):
 
     const response = await client.messages.create({
       model,
-      max_tokens: 1200,
+      max_tokens: 600,
       messages: [{ role: 'user', content: prompt }],
     })
 
@@ -190,11 +191,14 @@ export async function loadPendingDevotionals() {
 
 export async function updatePendingDevotional(id: string, formData: FormData) {
   const supabase = await requireAdminClient()
-  const { error } = await supabase.from('ai_devotionals').update({
+  const update: Record<string, string> = {
     verse_ref: ((formData.get('verse_ref') as string) ?? '').trim(),
     verse_text: ((formData.get('verse_text') as string) ?? '').trim(),
     reflection: ((formData.get('reflection') as string) ?? '').trim(),
-  }).eq('id', id)
+  }
+  const dateVal = (formData.get('date') as string)?.trim()
+  if (dateVal) update.date = dateVal
+  const { error } = await supabase.from('ai_devotionals').update(update).eq('id', id)
   if (error) return { error: error.message }
   revalidatePath('/admin/agente')
   return {}
@@ -240,4 +244,102 @@ export async function discardDevotional(id: string) {
   const supabase = await requireAdminClient()
   await supabase.from('ai_devotionals').update({ status: 'discarded' }).eq('id', id)
   revalidatePath('/admin/agente')
+}
+
+// ─── Generate Full Week ────────────────────────────────────────────────────────
+
+export async function generateWeekDevotionals(startDate: string): Promise<{
+  generated: number
+  errors: string[]
+}> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return { generated: 0, errors: ['ANTHROPIC_API_KEY não configurada.'] }
+  }
+
+  const supabase = await requireAdminClient()
+  const settings = await loadAgentSettings()
+
+  const { data: themes } = await supabase
+    .from('devotional_themes')
+    .select('theme, day_label')
+    .eq('active', true)
+    .order('sort_order')
+
+  const dayLabels = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
+  const { default: Anthropic } = await import('@anthropic-ai/sdk')
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const model = settings.model || 'claude-haiku-4-5-20251001'
+
+  const doctrineBlock = settings.doctrine_instructions?.trim()
+    ? `DIRETRIZES DE ESTILO E ÊNFASE:\n${settings.doctrine_instructions}\n\n`
+    : ''
+
+  const base = new Date(startDate + 'T12:00:00')
+  const errors: string[] = []
+  let generated = 0
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(base)
+    d.setDate(base.getDate() + i)
+    const dateStr = d.toISOString().split('T')[0]
+    const dayLabel = dayLabels[d.getDay()]
+
+    const matched = themes?.find((t) => t.day_label.toLowerCase().trim() === dayLabel)
+    const themeText = matched?.theme ?? themes?.[0]?.theme ?? 'Fé e confiança em Deus'
+
+    const prompt = `Você é um escritor de devocionais cristãos. Escreva um devocional CURTO e original em português do Brasil.
+
+${doctrineBlock}TEMA DO DIA: ${themeText}
+
+Requisitos:
+- Escolha um versículo bíblico relevante ao tema (da Bíblia ARC ou NVI)
+- Escreva UMA reflexão de 3-4 frases sobre o versículo
+- Finalize com UMA frase de aplicação prática direta
+- Total máximo: 130 palavras no campo "reflection"
+- Conteúdo 100% original, fundamentado na Bíblia
+- NÃO copie obras de terceiros nem mencione nomes de autores, pregadores ou ministérios
+- Voz pastoral direta, tom de encorajamento, leitura rápida no celular
+
+Responda APENAS com JSON válido (sem blocos de código markdown):
+{
+  "verse_ref": "Livro Capítulo:Versículo (ARC)",
+  "verse_text": "Texto completo do versículo",
+  "reflection": "Reflexão (3-4 frases) + 1 frase de aplicação prática — máximo 130 palavras"
+}`
+
+    try {
+      const response = await client.messages.create({
+        model,
+        max_tokens: 600,
+        messages: [{ role: 'user', content: prompt }],
+      })
+      const block = response.content[0]
+      if (block.type !== 'text') { errors.push(`Dia ${dateStr}: resposta inesperada.`); continue }
+
+      const raw = block.text.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim()
+      let parsed: { verse_ref: string; verse_text: string; reflection: string }
+      try { parsed = JSON.parse(raw) } catch { errors.push(`Dia ${dateStr}: JSON inválido.`); continue }
+
+      if (!parsed.verse_ref || !parsed.verse_text || !parsed.reflection) {
+        errors.push(`Dia ${dateStr}: campos incompletos.`)
+        continue
+      }
+
+      const { error: dbError } = await supabase.from('ai_devotionals').insert({
+        date: dateStr,
+        verse_ref: parsed.verse_ref,
+        verse_text: parsed.verse_text,
+        reflection: parsed.reflection,
+        theme: themeText,
+        status: 'pending',
+      })
+      if (dbError) { errors.push(`Dia ${dateStr}: ${dbError.message}`); continue }
+      generated++
+    } catch (e) {
+      errors.push(`Dia ${dateStr}: ${e instanceof Error ? e.message : String(e)}`)
+    }
+  }
+
+  revalidatePath('/admin/agente')
+  return { generated, errors }
 }
