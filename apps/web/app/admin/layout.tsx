@@ -12,6 +12,7 @@ const navItems = [
   { href: '/admin/whatsapp', label: 'WhatsApp', icon: '💬' },
   { href: '/admin/youtube-import', label: 'Importar YouTube', icon: '▶️' },
   { href: '/admin/publicidade', label: 'Publicidade', icon: '📢' },
+  { href: '/admin/parceria', label: 'Parceria', icon: '🤝' },
 ]
 
 export default async function AdminLayout({

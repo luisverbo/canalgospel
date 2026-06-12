@@ -1,12 +1,26 @@
 'use client'
 
 import { useTheme } from '@/lib/theme'
+import Link from 'next/link'
 
 export function SettingsClient() {
   const { theme, setTheme } = useTheme()
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Partnership CTA */}
+      <Link href="/parceria">
+        <div className="flex items-center gap-4 bg-[#2E2860] rounded-2xl p-4 active:scale-[0.98] transition-transform">
+          <div className="h-11 w-11 shrink-0 rounded-xl bg-[#E0A943] flex items-center justify-center text-xl">
+            🤝
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-semibold text-sm">Seja um parceiro de conteúdo</p>
+            <p className="text-white/60 text-xs mt-0.5">Publique estudos e ganhe audiência</p>
+          </div>
+          <span className="text-[#E0A943] font-bold text-lg">›</span>
+        </div>
+      </Link>
       {/* Appearance */}
       <section className="bg-white dark:bg-[#211E2D] rounded-2xl border border-[#1E1B2E]/8 dark:border-white/8 p-4">
         <h2 className="text-xs font-semibold text-[#8A8797] uppercase tracking-wide mb-3">
