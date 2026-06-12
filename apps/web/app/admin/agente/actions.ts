@@ -96,14 +96,16 @@ export async function generateDevotional() {
   // Pick today's theme: try to match day_label to day-of-week, else use first active theme
   const days = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
   const todayLabel = days[new Date().getDay()]
+  const normalize = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
   const { data: themes } = await supabase
     .from('devotional_themes')
     .select('theme, day_label')
     .eq('active', true)
     .order('sort_order')
 
-  const matched = themes?.find((t) => t.day_label.toLowerCase().trim() === todayLabel)
+  const matched = themes?.find((t) => normalize(t.day_label) === todayLabel)
   const themeText = matched?.theme ?? themes?.[0]?.theme ?? 'Fé e confiança em Deus'
+  console.log(`[agente] dia hoje: ${todayLabel} → tema: "${themeText}" (match: ${!!matched})`)
 
   // Build prompt
   const doctrineBlock = settings.doctrine_instructions?.trim()
@@ -265,7 +267,15 @@ export async function generateWeekDevotionals(startDate: string): Promise<{
     .eq('active', true)
     .order('sort_order')
 
+  // Canonical day labels (no accents, lowercase) — must match devotional_themes.day_label after normalization
   const dayLabels = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado']
+
+  // Normalize: remove accents, lowercase, trim
+  const normalize = (s: string) =>
+    s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+
+  console.log('[agente] themes in DB:', JSON.stringify(themes?.map((t) => ({ day_label: t.day_label, normalized: normalize(t.day_label), theme: t.theme }))))
+
   const { default: Anthropic } = await import('@anthropic-ai/sdk')
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   const model = settings.model || 'claude-haiku-4-5-20251001'
@@ -284,8 +294,13 @@ export async function generateWeekDevotionals(startDate: string): Promise<{
     const dateStr = d.toISOString().split('T')[0]
     const dayLabel = dayLabels[d.getDay()]
 
-    const matched = themes?.find((t) => t.day_label.toLowerCase().trim() === dayLabel)
-    const themeText = matched?.theme ?? themes?.[0]?.theme ?? 'Fé e confiança em Deus'
+    const matched = themes?.find((t) => normalize(t.day_label) === dayLabel)
+    const themeText = matched?.theme ?? ''
+    if (!matched) {
+      console.log(`[agente] tema não encontrado para dia: ${dayLabel} (${dateStr}) — temas disponíveis: ${themes?.map((t) => normalize(t.day_label)).join(', ')}`)
+    } else {
+      console.log(`[agente] dia ${dayLabel} (${dateStr}) → tema: "${themeText}"`)
+    }
 
     const prompt = `Você é um escritor de devocionais cristãos. Escreva um devocional CURTO e original em português do Brasil.
 
