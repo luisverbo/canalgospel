@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, WandSparkles, ChevronRight, FileText, Download } from 'lucide-react'
+import { ArrowLeft, WandSparkles, ChevronRight, FileText, Download, Pencil, Check, X } from 'lucide-react'
 import { createClient } from '@canal-gospel/supabase'
 import { getIsSubscriber, getDeviceId } from '@/lib/subscription'
 
@@ -56,6 +56,8 @@ const DURATION_OPTIONS = [
 ]
 
 const WEB_URL = (process.env.NEXT_PUBLIC_WEB_URL ?? '').replace(/\/$/, '')
+
+// ─── PDF export ───────────────────────────────────────────────────────────────
 
 async function exportPDF(outline: SermonOutline, theme: string, baseVerse?: string | null) {
   try {
@@ -111,6 +113,243 @@ async function exportPDF(outline: SermonOutline, theme: string, baseVerse?: stri
   }
 }
 
+// ─── Inline-edit helpers ──────────────────────────────────────────────────────
+
+const TA = 'w-full px-3 py-2 rounded-xl border border-[#2E2860]/30 text-sm outline-none focus:border-[#2E2860] bg-[#FAF7F1] dark:bg-white/5 dark:text-[#F3F1FA] resize-none'
+const INPUT = 'w-full px-3 py-2 rounded-xl border border-[#2E2860]/30 text-sm outline-none focus:border-[#2E2860] bg-[#FAF7F1] dark:bg-white/5 dark:text-[#F3F1FA]'
+
+function EditBar({ onSave, onCancel }: { onSave: () => void; onCancel: () => void }) {
+  return (
+    <div className="flex gap-2 mt-2">
+      <button type="button" onClick={onCancel}
+        className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#1E1B2E]/15 text-xs text-[#8A8797]">
+        <X size={12} /> Cancelar
+      </button>
+      <button type="button" onClick={onSave}
+        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#2E2860] text-white text-xs font-semibold">
+        <Check size={12} /> Salvar
+      </button>
+    </div>
+  )
+}
+
+function EditBtn({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick}
+      className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#1E1B2E]/10 dark:border-white/10 text-[#8A8797] text-xs hover:border-[#2E2860]/30 hover:text-[#2E2860] transition-colors">
+      <Pencil size={11} strokeWidth={2} /> Editar
+    </button>
+  )
+}
+
+// ─── OutlineView ──────────────────────────────────────────────────────────────
+
+type EditSection = 'title' | 'intro' | `point-${number}` | 'conclusion' | null
+
+function OutlineView({
+  outline, theme, baseVerse, onUpdate, onNew,
+}: {
+  outline: SermonOutline
+  theme: string
+  baseVerse?: string | null
+  onUpdate: (updated: SermonOutline) => void
+  onNew: () => void
+}) {
+  const [editing, setEditing] = useState<EditSection>(null)
+  // Draft state per section
+  const [draftTitle, setDraftTitle] = useState('')
+  const [draftIntro, setDraftIntro] = useState('')
+  const [draftPoint, setDraftPoint] = useState<{ title: string; content: string; verses: string; illustration: string }>({ title: '', content: '', verses: '', illustration: '' })
+  const [draftConclusion, setDraftConclusion] = useState({ conclusion: '', call_to_action: '', practical_application: '' })
+
+  const startEdit = (section: EditSection) => {
+    if (section === 'title') setDraftTitle(outline.title)
+    else if (section === 'intro') setDraftIntro(outline.introduction)
+    else if (section === 'conclusion') setDraftConclusion({ conclusion: outline.conclusion, call_to_action: outline.call_to_action, practical_application: outline.practical_application })
+    else if (section?.startsWith('point-')) {
+      const i = Number(section.split('-')[1])
+      const pt = outline.points[i]
+      setDraftPoint({ title: pt.title, content: pt.content, verses: pt.verses.join('\n'), illustration: pt.illustration })
+    }
+    setEditing(section)
+  }
+
+  const saveEdit = () => {
+    let updated = { ...outline }
+    if (editing === 'title') {
+      updated = { ...updated, title: draftTitle.trim() || updated.title }
+    } else if (editing === 'intro') {
+      updated = { ...updated, introduction: draftIntro.trim() || updated.introduction }
+    } else if (editing === 'conclusion') {
+      updated = { ...updated, conclusion: draftConclusion.conclusion, call_to_action: draftConclusion.call_to_action, practical_application: draftConclusion.practical_application }
+    } else if (editing?.startsWith('point-')) {
+      const i = Number(editing.split('-')[1])
+      const newPoints = [...updated.points]
+      newPoints[i] = {
+        title: draftPoint.title.trim() || newPoints[i].title,
+        content: draftPoint.content,
+        verses: draftPoint.verses.split('\n').map((v) => v.trim()).filter(Boolean),
+        illustration: draftPoint.illustration,
+      }
+      updated = { ...updated, points: newPoints }
+    }
+    onUpdate(updated)
+    setEditing(null)
+  }
+
+  const cancel = () => setEditing(null)
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Title card */}
+      <div className="bg-[#2E2860] rounded-2xl p-5">
+        <p className="text-[#E0A943] text-xs font-bold uppercase tracking-widest mb-1">Esboço gerado</p>
+        {editing === 'title' ? (
+          <>
+            <input value={draftTitle} onChange={(e) => setDraftTitle(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-white/20 bg-white/10 text-white text-lg font-bold outline-none" />
+            <EditBar onSave={saveEdit} onCancel={cancel} />
+          </>
+        ) : (
+          <div className="flex items-start gap-2">
+            <h2 className="text-white text-xl font-bold leading-snug flex-1">{outline.title}</h2>
+            <button type="button" onClick={() => startEdit('title')}
+              className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/20 text-white/70 text-xs hover:border-white/50 transition-colors mt-0.5">
+              <Pencil size={11} strokeWidth={2} /> Editar
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Introduction */}
+      <div className="bg-white dark:bg-[#211E2D] rounded-2xl border border-[#1E1B2E]/8 dark:border-white/8 p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-xs font-bold text-[#8A8797] uppercase tracking-wide">Introdução</h3>
+          {editing !== 'intro' && <EditBtn onClick={() => startEdit('intro')} />}
+        </div>
+        {editing === 'intro' ? (
+          <>
+            <textarea value={draftIntro} onChange={(e) => setDraftIntro(e.target.value)} rows={5} className={TA} />
+            <EditBar onSave={saveEdit} onCancel={cancel} />
+          </>
+        ) : (
+          <p className="text-sm text-[#1E1B2E] dark:text-[#D8D5E4] leading-relaxed">{outline.introduction}</p>
+        )}
+      </div>
+
+      {/* Points */}
+      {outline.points?.map((pt, i) => {
+        const key = `point-${i}` as EditSection
+        const isEditing = editing === key
+        return (
+          <div key={i} className="bg-white dark:bg-[#211E2D] rounded-2xl border border-[#1E1B2E]/8 dark:border-white/8 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="h-6 w-6 rounded-full bg-[#2E2860] text-white text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+              {isEditing ? (
+                <input value={draftPoint.title} onChange={(e) => setDraftPoint((d) => ({ ...d, title: e.target.value }))}
+                  className={INPUT + ' flex-1'} placeholder="Título do ponto" />
+              ) : (
+                <>
+                  <h3 className="font-semibold text-[#1E1B2E] dark:text-[#F3F1FA] flex-1 leading-snug">{pt.title}</h3>
+                  <EditBtn onClick={() => startEdit(key)} />
+                </>
+              )}
+            </div>
+            {isEditing ? (
+              <div className="flex flex-col gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-[#8A8797] uppercase tracking-wide block mb-1">Desenvolvimento</label>
+                  <textarea value={draftPoint.content} onChange={(e) => setDraftPoint((d) => ({ ...d, content: e.target.value }))} rows={4} className={TA} />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-[#8A8797] uppercase tracking-wide block mb-1">Versículos (um por linha)</label>
+                  <textarea value={draftPoint.verses} onChange={(e) => setDraftPoint((d) => ({ ...d, verses: e.target.value }))} rows={2} className={TA} placeholder="João 3:16&#10;Rm 8:28" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-[#8A8797] uppercase tracking-wide block mb-1">Ilustração</label>
+                  <textarea value={draftPoint.illustration} onChange={(e) => setDraftPoint((d) => ({ ...d, illustration: e.target.value }))} rows={3} className={TA} />
+                </div>
+                <EditBar onSave={saveEdit} onCancel={cancel} />
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-[#1E1B2E] dark:text-[#D8D5E4] leading-relaxed mb-3">{pt.content}</p>
+                {pt.verses?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {pt.verses.map((v) => (
+                      <span key={v} className="text-xs bg-[#2E2860]/8 text-[#2E2860] dark:bg-[#2E2860]/30 dark:text-[#B5B0D8] px-2 py-0.5 rounded-full font-medium">{v}</span>
+                    ))}
+                  </div>
+                )}
+                <div className="bg-[#FAF7F1] dark:bg-white/5 rounded-xl px-3 py-2">
+                  <p className="text-[9px] font-bold text-[#8A8797] uppercase tracking-wide mb-0.5">Ilustração sugerida</p>
+                  <p className="text-xs text-[#1E1B2E] dark:text-[#D8D5E4] leading-relaxed">{pt.illustration}</p>
+                </div>
+              </>
+            )}
+          </div>
+        )
+      })}
+
+      {/* Conclusion */}
+      <div className="bg-white dark:bg-[#211E2D] rounded-2xl border border-[#1E1B2E]/8 dark:border-white/8 p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-xs font-bold text-[#8A8797] uppercase tracking-wide">Conclusão</h3>
+          {editing !== 'conclusion' && <EditBtn onClick={() => startEdit('conclusion')} />}
+        </div>
+        {editing === 'conclusion' ? (
+          <div className="flex flex-col gap-3">
+            <div>
+              <label className="text-[10px] font-bold text-[#8A8797] uppercase tracking-wide block mb-1">Conclusão</label>
+              <textarea value={draftConclusion.conclusion} onChange={(e) => setDraftConclusion((d) => ({ ...d, conclusion: e.target.value }))} rows={4} className={TA} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-[#8A8797] uppercase tracking-wide block mb-1">Chamada à decisão</label>
+              <textarea value={draftConclusion.call_to_action} onChange={(e) => setDraftConclusion((d) => ({ ...d, call_to_action: e.target.value }))} rows={3} className={TA} />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-[#8A8797] uppercase tracking-wide block mb-1">Aplicação prática</label>
+              <textarea value={draftConclusion.practical_application} onChange={(e) => setDraftConclusion((d) => ({ ...d, practical_application: e.target.value }))} rows={3} className={TA} />
+            </div>
+            <EditBar onSave={saveEdit} onCancel={cancel} />
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-[#1E1B2E] dark:text-[#D8D5E4] leading-relaxed mb-3">{outline.conclusion}</p>
+            <div className="bg-[#E0A943]/10 dark:bg-[#E0A943]/5 rounded-xl px-3 py-2 mb-2">
+              <p className="text-[9px] font-bold text-[#9a6f1a] uppercase tracking-wide mb-0.5">Chamada à decisão</p>
+              <p className="text-sm text-[#1E1B2E] dark:text-[#D8D5E4]">{outline.call_to_action}</p>
+            </div>
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl px-3 py-2">
+              <p className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide mb-0.5">Aplicação prática</p>
+              <p className="text-sm text-[#1E1B2E] dark:text-[#D8D5E4]">{outline.practical_application}</p>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-3">
+        <button
+          onClick={() => exportPDF(outline, theme, baseVerse)}
+          className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#E0A943] text-[#1E1B2E] rounded-2xl font-bold text-sm active:scale-[0.98] transition-transform"
+        >
+          <Download size={16} strokeWidth={2} />
+          Exportar PDF
+        </button>
+        <button
+          onClick={onNew}
+          className="flex-1 py-3.5 border border-[#2E2860]/20 dark:border-white/15 text-[#2E2860] dark:text-[#B5B0D8] rounded-2xl font-semibold text-sm active:scale-[0.98] transition-transform"
+        >
+          Novo esboço
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Paywall ──────────────────────────────────────────────────────────────────
+
 function Paywall() {
   return (
     <div className="flex flex-col gap-5 px-4 pt-6 pb-10">
@@ -127,9 +366,7 @@ function Paywall() {
         </div>
         <p className="text-xs font-bold text-[#E0A943] uppercase tracking-widest mb-1">Plano Pregador</p>
         <h2 className="text-xl font-bold text-white mb-2">Monte seu sermão com IA</h2>
-        <p className="text-sm text-[#A9A4C4]">
-          Em minutos, gere um esboço completo, bíblico e pronto para pregar.
-        </p>
+        <p className="text-sm text-[#A9A4C4]">Em minutos, gere um esboço completo, bíblico e pronto para pregar.</p>
       </div>
 
       <div className="bg-white dark:bg-[#211E2D] rounded-2xl border border-[#1E1B2E]/8 dark:border-white/8 p-5">
@@ -137,9 +374,8 @@ function Paywall() {
         <div className="flex flex-col gap-3">
           {[
             { icon: '✨', text: 'Esboços completos — introdução, 3 pontos e conclusão' },
-            { icon: '📖', text: 'Versículos de suporte selecionados automaticamente' },
-            { icon: '💡', text: 'Ilustrações e aplicações práticas para cada ponto' },
-            { icon: '📄', text: 'Exportar em PDF para levar ao púlpito' },
+            { icon: '✏️', text: 'Edite qualquer parte do esboço antes de exportar' },
+            { icon: '📄', text: 'Exportar em PDF com as suas edições' },
             { icon: '🚫', text: 'Zero anúncios — nem AdMob nem anúncios internos' },
             { icon: '📚', text: 'Histórico de todos os esboços gerados' },
           ].map(({ icon, text }) => (
@@ -178,78 +414,7 @@ function Paywall() {
   )
 }
 
-function OutlineView({
-  outline, theme, baseVerse, onNew,
-}: {
-  outline: SermonOutline
-  theme: string
-  baseVerse?: string | null
-  onNew: () => void
-}) {
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="bg-[#2E2860] rounded-2xl p-5">
-        <p className="text-[#E0A943] text-xs font-bold uppercase tracking-widest mb-1">Esboço gerado</p>
-        <h2 className="text-white text-xl font-bold leading-snug">{outline.title}</h2>
-      </div>
-
-      <div className="bg-white dark:bg-[#211E2D] rounded-2xl border border-[#1E1B2E]/8 dark:border-white/8 p-4">
-        <h3 className="text-xs font-bold text-[#8A8797] uppercase tracking-wide mb-2">Introdução</h3>
-        <p className="text-sm text-[#1E1B2E] dark:text-[#D8D5E4] leading-relaxed">{outline.introduction}</p>
-      </div>
-
-      {outline.points?.map((pt, i) => (
-        <div key={i} className="bg-white dark:bg-[#211E2D] rounded-2xl border border-[#1E1B2E]/8 dark:border-white/8 p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="h-6 w-6 rounded-full bg-[#2E2860] text-white text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
-            <h3 className="font-semibold text-[#1E1B2E] dark:text-[#F3F1FA] flex-1 leading-snug">{pt.title}</h3>
-          </div>
-          <p className="text-sm text-[#1E1B2E] dark:text-[#D8D5E4] leading-relaxed mb-3">{pt.content}</p>
-          {pt.verses?.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {pt.verses.map((v) => (
-                <span key={v} className="text-xs bg-[#2E2860]/8 text-[#2E2860] dark:bg-[#2E2860]/30 dark:text-[#B5B0D8] px-2 py-0.5 rounded-full font-medium">{v}</span>
-              ))}
-            </div>
-          )}
-          <div className="bg-[#FAF7F1] dark:bg-white/5 rounded-xl px-3 py-2">
-            <p className="text-[9px] font-bold text-[#8A8797] uppercase tracking-wide mb-0.5">Ilustração sugerida</p>
-            <p className="text-xs text-[#1E1B2E] dark:text-[#D8D5E4] leading-relaxed">{pt.illustration}</p>
-          </div>
-        </div>
-      ))}
-
-      <div className="bg-white dark:bg-[#211E2D] rounded-2xl border border-[#1E1B2E]/8 dark:border-white/8 p-4">
-        <h3 className="text-xs font-bold text-[#8A8797] uppercase tracking-wide mb-2">Conclusão</h3>
-        <p className="text-sm text-[#1E1B2E] dark:text-[#D8D5E4] leading-relaxed mb-3">{outline.conclusion}</p>
-        <div className="bg-[#E0A943]/10 dark:bg-[#E0A943]/5 rounded-xl px-3 py-2 mb-2">
-          <p className="text-[9px] font-bold text-[#9a6f1a] uppercase tracking-wide mb-0.5">Chamada à decisão</p>
-          <p className="text-sm text-[#1E1B2E] dark:text-[#D8D5E4]">{outline.call_to_action}</p>
-        </div>
-        <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl px-3 py-2">
-          <p className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide mb-0.5">Aplicação prática</p>
-          <p className="text-sm text-[#1E1B2E] dark:text-[#D8D5E4]">{outline.practical_application}</p>
-        </div>
-      </div>
-
-      <div className="flex gap-3">
-        <button
-          onClick={() => exportPDF(outline, theme, baseVerse)}
-          className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#E0A943] text-[#1E1B2E] rounded-2xl font-bold text-sm active:scale-[0.98] transition-transform"
-        >
-          <Download size={16} strokeWidth={2} />
-          Exportar PDF
-        </button>
-        <button
-          onClick={onNew}
-          className="flex-1 py-3.5 border border-[#2E2860]/20 dark:border-white/15 text-[#2E2860] dark:text-[#B5B0D8] rounded-2xl font-semibold text-sm active:scale-[0.98] transition-transform"
-        >
-          Novo esboço
-        </button>
-      </div>
-    </div>
-  )
-}
+// ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function SermonAssistantPage() {
   const [isSubscriber, setIsSubscriber] = useState(false)
@@ -258,6 +423,7 @@ export default function SermonAssistantPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [outline, setOutline] = useState<SermonOutline | null>(null)
+  const [savedOutlineId, setSavedOutlineId] = useState<string | null>(null)
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [historyLoading, setHistoryLoading] = useState(false)
   const [selectedHistory, setSelectedHistory] = useState<HistoryItem | null>(null)
@@ -274,11 +440,10 @@ export default function SermonAssistantPage() {
     setHistoryLoading(true)
     try {
       const supabase = createClient()
-      const deviceId = getDeviceId()
       const { data } = await supabase
         .from('sermon_outlines')
         .select('id, theme, base_verse, worship_type, duration_min, result_json, created_at')
-        .eq('user_device_id', deviceId)
+        .eq('user_device_id', getDeviceId())
         .order('created_at', { ascending: false })
         .limit(20)
       setHistory((data as HistoryItem[]) ?? [])
@@ -297,6 +462,7 @@ export default function SermonAssistantPage() {
     setLoading(true)
     setError('')
     setOutline(null)
+    setSavedOutlineId(null)
     try {
       const res = await fetch(`${WEB_URL}/api/sermon-assistant`, {
         method: 'POST',
@@ -308,22 +474,49 @@ export default function SermonAssistantPage() {
 
       setOutline(json.outline)
 
-      // Save to history (best-effort)
+      // Save and capture the record ID for later edits
       const supabase = createClient()
-      const deviceId = getDeviceId()
-      await supabase.from('sermon_outlines').insert({
-        user_device_id: deviceId,
-        theme: form.theme,
-        base_verse: form.base_verse || null,
-        worship_type: form.worship_type,
-        duration_min: form.duration_min,
-        result_json: json.outline,
-      }).catch(() => { /* non-critical */ })
+      const { data: inserted } = await supabase
+        .from('sermon_outlines')
+        .insert({
+          user_device_id: getDeviceId(),
+          theme: form.theme,
+          base_verse: form.base_verse || null,
+          worship_type: form.worship_type,
+          duration_min: form.duration_min,
+          result_json: json.outline,
+        })
+        .select('id')
+        .single()
+      if (inserted?.id) setSavedOutlineId(inserted.id)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro de rede.')
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleOutlineUpdate(updated: SermonOutline) {
+    setOutline(updated)
+    // Persist edits to Supabase
+    if (savedOutlineId) {
+      const supabase = createClient()
+      await supabase
+        .from('sermon_outlines')
+        .update({ result_json: updated })
+        .eq('id', savedOutlineId)
+        .catch(() => { /* best-effort */ })
+    }
+  }
+
+  async function handleHistoryUpdate(updated: SermonOutline, id: string) {
+    const supabase = createClient()
+    await supabase
+      .from('sermon_outlines')
+      .update({ result_json: updated })
+      .eq('id', id)
+      .catch(() => { /* best-effort */ })
+    setSelectedHistory((prev) => prev ? { ...prev, result_json: updated } : prev)
   }
 
   if (!isSubscriber) return <Paywall />
@@ -340,7 +533,6 @@ export default function SermonAssistantPage() {
         </div>
       </header>
 
-      {/* Tabs */}
       <div className="mx-4 mb-4 flex gap-1 bg-[#2E2860]/5 dark:bg-white/5 rounded-xl p-1">
         {(['generate', 'history'] as const).map((t) => (
           <button
@@ -362,7 +554,8 @@ export default function SermonAssistantPage() {
               outline={outline}
               theme={form.theme}
               baseVerse={form.base_verse || null}
-              onNew={() => setOutline(null)}
+              onUpdate={handleOutlineUpdate}
+              onNew={() => { setOutline(null); setSavedOutlineId(null) }}
             />
           ) : (
             <form onSubmit={handleGenerate} className="flex flex-col gap-4">
@@ -381,7 +574,6 @@ export default function SermonAssistantPage() {
                     className="w-full px-3 py-2.5 rounded-xl border border-[#1E1B2E]/15 dark:border-white/15 text-sm outline-none focus:border-[#2E2860] bg-[#FAF7F1] dark:bg-white/5 dark:text-[#F3F1FA]"
                   />
                 </div>
-
                 <div>
                   <label className="text-xs font-semibold text-[#8A8797] mb-1.5 block">
                     Versículo base <span className="font-normal">(opcional)</span>
@@ -393,7 +585,6 @@ export default function SermonAssistantPage() {
                     className="w-full px-3 py-2.5 rounded-xl border border-[#1E1B2E]/15 dark:border-white/15 text-sm outline-none focus:border-[#2E2860] bg-[#FAF7F1] dark:bg-white/5 dark:text-[#F3F1FA]"
                   />
                 </div>
-
                 <div>
                   <label className="text-xs font-semibold text-[#8A8797] mb-1.5 block">Tipo de culto</label>
                   <select
@@ -406,7 +597,6 @@ export default function SermonAssistantPage() {
                     ))}
                   </select>
                 </div>
-
                 <div>
                   <label className="text-xs font-semibold text-[#8A8797] mb-1.5 block">Duração</label>
                   <div className="flex gap-2">
@@ -452,17 +642,15 @@ export default function SermonAssistantPage() {
         {tab === 'history' && (
           selectedHistory ? (
             <div className="flex flex-col gap-4">
-              <button
-                onClick={() => setSelectedHistory(null)}
-                className="flex items-center gap-1.5 text-sm text-[#2E2860] dark:text-[#B5B0D8] font-semibold"
-              >
-                <ArrowLeft size={16} strokeWidth={2} />
-                Histórico
+              <button onClick={() => setSelectedHistory(null)}
+                className="flex items-center gap-1.5 text-sm text-[#2E2860] dark:text-[#B5B0D8] font-semibold">
+                <ArrowLeft size={16} strokeWidth={2} /> Histórico
               </button>
               <OutlineView
                 outline={selectedHistory.result_json}
                 theme={selectedHistory.theme}
                 baseVerse={selectedHistory.base_verse}
+                onUpdate={(updated) => handleHistoryUpdate(updated, selectedHistory.id)}
                 onNew={() => { setSelectedHistory(null); setTab('generate') }}
               />
             </div>
@@ -474,21 +662,16 @@ export default function SermonAssistantPage() {
             <div className="flex flex-col items-center py-14 text-center">
               <p className="text-3xl mb-2">📚</p>
               <p className="text-sm text-[#8A8797]">Nenhum esboço gerado ainda.</p>
-              <button
-                onClick={() => setTab('generate')}
-                className="mt-4 px-5 py-2 bg-[#E0A943] text-[#1E1B2E] rounded-xl font-semibold text-sm"
-              >
+              <button onClick={() => setTab('generate')}
+                className="mt-4 px-5 py-2 bg-[#E0A943] text-[#1E1B2E] rounded-xl font-semibold text-sm">
                 Gerar primeiro esboço
               </button>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
               {history.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setSelectedHistory(item)}
-                  className="w-full text-left bg-white dark:bg-[#211E2D] rounded-2xl border border-[#1E1B2E]/8 dark:border-white/8 p-4 flex items-center gap-3 active:scale-[0.99] transition-transform"
-                >
+                <button key={item.id} onClick={() => setSelectedHistory(item)}
+                  className="w-full text-left bg-white dark:bg-[#211E2D] rounded-2xl border border-[#1E1B2E]/8 dark:border-white/8 p-4 flex items-center gap-3 active:scale-[0.99] transition-transform">
                   <div className="h-10 w-10 shrink-0 rounded-xl bg-[#2E2860]/8 dark:bg-[#2E2860]/30 flex items-center justify-center">
                     <FileText size={18} strokeWidth={1.5} className="text-[#2E2860] dark:text-[#B5B0D8]" />
                   </div>
@@ -499,9 +682,7 @@ export default function SermonAssistantPage() {
                     <p className="text-xs text-[#8A8797] mt-0.5 truncate">{item.theme} · {item.duration_min} min</p>
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
-                    <span className="text-xs text-[#8A8797]">
-                      {new Date(item.created_at).toLocaleDateString('pt-BR')}
-                    </span>
+                    <span className="text-xs text-[#8A8797]">{new Date(item.created_at).toLocaleDateString('pt-BR')}</span>
                     <ChevronRight size={16} strokeWidth={2} className="text-[#8A8797]" />
                   </div>
                 </button>
