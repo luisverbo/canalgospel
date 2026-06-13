@@ -32,6 +32,21 @@ function groupByKind(cats: Category[]) {
   return groups
 }
 
+type ContentType = 'video' | 'audio' | 'text'
+
+const TYPES: { value: ContentType; label: string }[] = [
+  { value: 'video', label: '▶ Vídeo do YouTube' },
+  { value: 'audio', label: '🎧 Áudio' },
+  { value: 'text', label: '📖 Estudo de Texto' },
+]
+
+function detectInitialType(study?: ExistingStudy): ContentType {
+  if (!study) return 'text'
+  if (study.content_type === 'audio') return 'audio'
+  if (study.content_type === 'video' || study.youtube_url) return 'video'
+  return 'text'
+}
+
 export function PartnerStudyForm({
   categories,
   study,
@@ -41,10 +56,8 @@ export function PartnerStudyForm({
 }) {
   const router = useRouter()
   const editing = !!study
-  const initialType: 'video' | 'text' =
-    study ? (study.content_type === 'video' || study.youtube_url ? 'video' : 'text') : 'text'
 
-  const [contentType, setContentType] = useState<'video' | 'text'>(initialType)
+  const [contentType, setContentType] = useState<ContentType>(detectInitialType(study))
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [coverUrl, setCoverUrl] = useState(study?.cover_url ?? '')
@@ -117,16 +130,17 @@ export function PartnerStudyForm({
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-[#1E1B2E]/8 p-6 flex flex-col gap-5">
+
       {/* Tipo de conteúdo */}
       <div>
         <label className="block text-sm font-medium text-[#1E1B2E] mb-2">Tipo de conteúdo</label>
-        <div className="flex gap-3">
-          {(['video', 'text'] as const).map((t) => (
-            <button key={t} type="button" onClick={() => setContentType(t)}
-              className={`flex-1 py-3 rounded-xl border-2 text-sm font-semibold transition-colors ${
-                contentType === t ? 'border-[#2E2860] bg-[#2E2860] text-white' : 'border-[#1E1B2E]/15 text-[#8A8797] hover:border-[#2E2860]/40'
+        <div className="flex gap-2">
+          {TYPES.map(({ value, label }) => (
+            <button key={value} type="button" onClick={() => setContentType(value)}
+              className={`flex-1 py-3 rounded-xl border-2 text-xs font-semibold transition-colors ${
+                contentType === value ? 'border-[#2E2860] bg-[#2E2860] text-white' : 'border-[#1E1B2E]/15 text-[#8A8797] hover:border-[#2E2860]/40'
               }`}>
-              {t === 'video' ? '▶ Vídeo do YouTube' : '📝 Estudo de Texto'}
+              {label}
             </button>
           ))}
         </div>
@@ -152,7 +166,7 @@ export function PartnerStudyForm({
         </select>
       </div>
 
-      {/* Vídeo */}
+      {/* YouTube URL (só para vídeo) */}
       {contentType === 'video' && (
         <div>
           <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">URL do YouTube *</label>
@@ -168,56 +182,79 @@ export function PartnerStudyForm({
         </div>
       )}
 
-      {/* Texto */}
-      {contentType === 'text' && (
-        <>
-          <div>
-            <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">
-              Imagem de capa <span className="text-[#8A8797] font-normal">(opcional)</span>
-            </label>
-            <div className="flex items-center gap-3">
-              {coverPreview && (
-                <img src={coverPreview} alt="Capa" className="h-16 w-24 rounded-xl object-cover border border-[#1E1B2E]/10" />
-              )}
-              <button type="button" onClick={() => coverRef.current?.click()} disabled={coverUploading}
-                className="px-4 py-2 border border-[#1E1B2E]/15 text-sm text-[#2E2860] rounded-xl hover:bg-[#2E2860]/5 disabled:opacity-50">
-                {coverUploading ? 'Enviando…' : coverPreview ? 'Trocar imagem' : 'Escolher imagem'}
-              </button>
-              {coverPreview && (
-                <button type="button" onClick={() => { setCoverUrl(''); setCoverPreview('') }}
-                  className="text-xs text-red-500 hover:underline">Remover</button>
-              )}
-            </div>
-            <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={handleCover} />
+      {/* Áudio: obrigatório para tipo áudio, opcional para outros */}
+      {contentType === 'audio' ? (
+        <div>
+          <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">
+            Arquivo de áudio * <span className="text-[#8A8797] font-normal">(.mp3 ou .m4a · máx. 100MB)</span>
+          </label>
+          <div className="flex items-center gap-3">
+            {audioName && (
+              <span className="text-xs text-[#2E2860] bg-[#2E2860]/8 px-3 py-1.5 rounded-lg truncate max-w-[200px]">🎧 {audioName}</span>
+            )}
+            <button type="button" onClick={() => audioRef.current?.click()} disabled={audioUploading}
+              className="px-4 py-2 border border-[#1E1B2E]/15 text-sm text-[#2E2860] rounded-xl hover:bg-[#2E2860]/5 disabled:opacity-50">
+              {audioUploading ? 'Enviando…' : audioName ? 'Trocar áudio' : 'Escolher arquivo'}
+            </button>
+            {audioUrl && (
+              <button type="button" onClick={() => { setAudioUrl(''); setAudioName('') }}
+                className="text-xs text-red-500 hover:underline">Remover</button>
+            )}
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">Conteúdo *</label>
-            <RichTextEditor name="body" initialHTML={cleanBody} uploadAction={uploadPartnerImage} />
+          <input ref={audioRef} type="file" accept=".mp3,.m4a,audio/mpeg,audio/mp4,audio/x-m4a" className="hidden" onChange={handleAudio} />
+        </div>
+      ) : (
+        <div>
+          <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">
+            Áudio da pregação <span className="text-[#8A8797] font-normal">(opcional · .mp3 ou .m4a · máx. 100MB)</span>
+          </label>
+          <div className="flex items-center gap-3">
+            {audioName && (
+              <span className="text-xs text-[#2E2860] bg-[#2E2860]/8 px-3 py-1.5 rounded-lg truncate max-w-[200px]">🎧 {audioName}</span>
+            )}
+            <button type="button" onClick={() => audioRef.current?.click()} disabled={audioUploading}
+              className="px-4 py-2 border border-[#1E1B2E]/15 text-sm text-[#2E2860] rounded-xl hover:bg-[#2E2860]/5 disabled:opacity-50">
+              {audioUploading ? 'Enviando…' : audioName ? 'Trocar áudio' : 'Escolher arquivo'}
+            </button>
+            {audioUrl && (
+              <button type="button" onClick={() => { setAudioUrl(''); setAudioName('') }}
+                className="text-xs text-red-500 hover:underline">Remover</button>
+            )}
           </div>
-        </>
+          <input ref={audioRef} type="file" accept=".mp3,.m4a,audio/mpeg,audio/mp4,audio/x-m4a" className="hidden" onChange={handleAudio} />
+        </div>
       )}
 
-      {/* Áudio da pregação (opcional) */}
-      <div>
-        <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">
-          Áudio da pregação <span className="text-[#8A8797] font-normal">(opcional · .mp3 ou .m4a · máx. 100MB)</span>
-        </label>
-        <div className="flex items-center gap-3">
-          {audioName && (
-            <span className="text-xs text-[#2E2860] bg-[#2E2860]/8 px-3 py-1.5 rounded-lg truncate max-w-[200px]">🎧 {audioName}</span>
-          )}
-          <button type="button" onClick={() => audioRef.current?.click()} disabled={audioUploading}
-            className="px-4 py-2 border border-[#1E1B2E]/15 text-sm text-[#2E2860] rounded-xl hover:bg-[#2E2860]/5 disabled:opacity-50">
-            {audioUploading ? 'Enviando…' : audioName ? 'Trocar áudio' : 'Escolher arquivo'}
-          </button>
-          {audioUrl && (
-            <button type="button" onClick={() => { setAudioUrl(''); setAudioName('') }}
-              className="text-xs text-red-500 hover:underline">Remover</button>
-          )}
+      {/* Capa: para texto e áudio */}
+      {(contentType === 'text' || contentType === 'audio') && (
+        <div>
+          <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">
+            Imagem de capa <span className="text-[#8A8797] font-normal">(opcional)</span>
+          </label>
+          <div className="flex items-center gap-3">
+            {coverPreview && (
+              <img src={coverPreview} alt="Capa" className="h-16 w-24 rounded-xl object-cover border border-[#1E1B2E]/10" />
+            )}
+            <button type="button" onClick={() => coverRef.current?.click()} disabled={coverUploading}
+              className="px-4 py-2 border border-[#1E1B2E]/15 text-sm text-[#2E2860] rounded-xl hover:bg-[#2E2860]/5 disabled:opacity-50">
+              {coverUploading ? 'Enviando…' : coverPreview ? 'Trocar imagem' : 'Escolher imagem'}
+            </button>
+            {coverPreview && (
+              <button type="button" onClick={() => { setCoverUrl(''); setCoverPreview('') }}
+                className="text-xs text-red-500 hover:underline">Remover</button>
+            )}
+          </div>
+          <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={handleCover} />
         </div>
-        <input ref={audioRef} type="file" accept=".mp3,.m4a,audio/mpeg,audio/mp4,audio/x-m4a" className="hidden" onChange={handleAudio} />
-      </div>
+      )}
+
+      {/* Body: obrigatório para texto, oculto para áudio */}
+      {contentType === 'text' && (
+        <div>
+          <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">Conteúdo *</label>
+          <RichTextEditor name="body" initialHTML={cleanBody} uploadAction={uploadPartnerImage} />
+        </div>
+      )}
 
       {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{error}</div>}
 

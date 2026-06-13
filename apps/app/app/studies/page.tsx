@@ -18,6 +18,8 @@ interface Study {
   body: string | null
   youtube_url: string | null
   audio_url: string | null
+  cover_url: string | null
+  content_type: string | null
   read_time_min: number | null
   published_at: string | null
   preachers: { display_name: string; slug: string; photo_url: string | null; church: string | null; city: string | null } | null
@@ -36,7 +38,7 @@ function StudyDetail({ slug }: { slug: string }) {
     const supabase = createClient()
     supabase
       .from('studies')
-      .select('id, title, body, youtube_url, audio_url, read_time_min, published_at, preachers(display_name, slug, photo_url, church, city), categories(name, slug)')
+      .select('id, title, body, youtube_url, audio_url, cover_url, content_type, read_time_min, published_at, preachers(display_name, slug, photo_url, church, city), categories(name, slug)')
       .eq('slug', slug)
       .eq('status', 'published')
       .maybeSingle()
@@ -110,7 +112,7 @@ function StudiesContent() {
       supabase.from('categories').select('id, name, slug').order('sort_order'),
       supabase
         .from('studies')
-        .select('id, title, slug, body, youtube_url, audio_url, cover_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
+        .select('id, title, slug, body, youtube_url, audio_url, cover_url, content_type, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)')
         .eq('status', 'published')
         .order('published_at', { ascending: false })
         .limit(50),

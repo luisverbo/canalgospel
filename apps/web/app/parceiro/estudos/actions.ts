@@ -74,6 +74,7 @@ export async function createPartnerStudy(formData: FormData) {
   if (!title) return { error: 'Título é obrigatório' }
   if (contentType === 'video' && !youtubeUrl) return { error: 'URL do YouTube é obrigatória para vídeos' }
   if (contentType === 'text' && htmlIsEmpty(body)) return { error: 'Conteúdo é obrigatório para estudos de texto' }
+  if (contentType === 'audio' && !audioUrl) return { error: 'Arquivo de áudio é obrigatório' }
 
   // Decisão de publicação feita no servidor
   let status: 'draft' | 'pending' | 'published' = 'draft'
@@ -96,8 +97,8 @@ export async function createPartnerStudy(formData: FormData) {
     slug,
     content_type: contentType,
     youtube_url: contentType === 'video' ? youtubeUrl : null,
-    body: htmlIsEmpty(body) ? ' ' : body.trim(),
-    cover_url: contentType === 'text' ? coverUrl : null,
+    body: contentType === 'audio' ? ' ' : (htmlIsEmpty(body) ? ' ' : body.trim()),
+    cover_url: contentType === 'video' ? null : coverUrl,
     audio_url: audioUrl,
     status,
     published_at: publishedAt,
@@ -133,6 +134,9 @@ export async function updatePartnerStudy(studyId: string, formData: FormData) {
   const submitAction = formData.get('submit_action') as string
 
   if (!title) return { error: 'Título é obrigatório' }
+  if (contentType === 'video' && !youtubeUrl) return { error: 'URL do YouTube é obrigatória para vídeos' }
+  if (contentType === 'text' && htmlIsEmpty(body)) return { error: 'Conteúdo é obrigatório para estudos de texto' }
+  if (contentType === 'audio' && !audioUrl) return { error: 'Arquivo de áudio é obrigatório' }
 
   // Status: parceiro pode manter rascunho ou (re)enviar.
   // Se reenviar: confiável → published; senão → pending.
@@ -154,8 +158,8 @@ export async function updatePartnerStudy(studyId: string, formData: FormData) {
     category_id: categoryId || null,
     content_type: contentType,
     youtube_url: contentType === 'video' ? youtubeUrl || null : null,
-    body: htmlIsEmpty(body) ? ' ' : body.trim(),
-    cover_url: contentType === 'text' ? coverUrl : null,
+    body: contentType === 'audio' ? ' ' : (htmlIsEmpty(body) ? ' ' : body.trim()),
+    cover_url: contentType === 'video' ? null : coverUrl,
     audio_url: audioUrl,
     status,
   }

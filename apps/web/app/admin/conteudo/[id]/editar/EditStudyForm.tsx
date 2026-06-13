@@ -31,10 +31,25 @@ function groupByKind(cats: { id: string; name: string; kind?: string }[]) {
   return groups
 }
 
+type ContentType = 'video' | 'audio' | 'text'
+
+const TYPES: { value: ContentType; label: string }[] = [
+  { value: 'video', label: '▶ Vídeo do YouTube' },
+  { value: 'audio', label: '🎧 Áudio' },
+  { value: 'text', label: '📖 Estudo de Texto' },
+]
+
+function detectInitialType(study: Study): ContentType {
+  if (study.content_type === 'audio') return 'audio'
+  if (study.content_type === 'video' || !!study.youtube_url) return 'video'
+  return 'text'
+}
+
 export function EditStudyForm({ study, categories }: { study: Study; categories: Category[] }) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [contentType, setContentType] = useState<ContentType>(detectInitialType(study))
   const [coverUrl, setCoverUrl] = useState(study.cover_url ?? '')
   const [coverPreview, setCoverPreview] = useState(study.cover_url ?? '')
   const [coverUploading, setCoverUploading] = useState(false)
@@ -44,7 +59,6 @@ export function EditStudyForm({ study, categories }: { study: Study; categories:
   const [audioUploading, setAudioUploading] = useState(false)
   const audioInputRef = useRef<HTMLInputElement>(null)
 
-  const isVideo = !!study.youtube_url || study.content_type === 'video'
   const inputCls = 'w-full px-3.5 py-2.5 rounded-xl border border-[#1E1B2E]/15 bg-white text-[#1E1B2E] text-sm outline-none focus:border-[#2E2860]'
   const categoryGroups = groupByKind(categories)
 
@@ -91,6 +105,9 @@ export function EditStudyForm({ study, categories }: { study: Study; categories:
     setLoading(true)
     setError(null)
     const fd = new FormData(e.currentTarget)
+    fd.set('content_type', contentType)
+    fd.set('audio_url', audioUrl)
+    fd.set('cover_url', coverUrl)
     const result = await updateStudy(study.id, fd)
     if (result?.error) {
       setError(result.error)
@@ -102,6 +119,24 @@ export function EditStudyForm({ study, categories }: { study: Study; categories:
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-[#1E1B2E]/8 p-6 flex flex-col gap-5">
+
+      {/* Tipo de conteúdo */}
+      <div>
+        <label className="block text-sm font-medium text-[#1E1B2E] mb-2">Tipo de conteúdo</label>
+        <div className="flex gap-2">
+          {TYPES.map(({ value, label }) => (
+            <button key={value} type="button" onClick={() => setContentType(value)}
+              className={`flex-1 py-3 rounded-xl border-2 text-xs font-semibold transition-colors ${
+                contentType === value
+                  ? 'border-[#2E2860] bg-[#2E2860] text-white'
+                  : 'border-[#1E1B2E]/15 text-[#8A8797] hover:border-[#2E2860]/40'
+              }`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Título */}
       <div>
         <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">Título *</label>
@@ -115,16 +150,14 @@ export function EditStudyForm({ study, categories }: { study: Study; categories:
           <option value="">Sem categoria</option>
           {Object.entries(categoryGroups).map(([kind, cats]) => (
             <optgroup key={kind} label={kindLabel[kind] ?? kind}>
-              {cats.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
+              {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </optgroup>
           ))}
         </select>
       </div>
 
-      {/* YouTube URL (vídeos) */}
-      {isVideo && (
+      {/* YouTube URL (só para vídeo) */}
+      {contentType === 'video' && (
         <div>
           <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">URL do YouTube</label>
           <input name="youtube_url" defaultValue={study.youtube_url ?? ''}
@@ -132,8 +165,51 @@ export function EditStudyForm({ study, categories }: { study: Study; categories:
         </div>
       )}
 
-      {/* Capa (só para estudos de texto) */}
-      {!isVideo && (
+      {/* Áudio */}
+      {contentType === 'audio' ? (
+        <div>
+          <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">
+            Arquivo de áudio * <span className="text-[#8A8797] font-normal">(.mp3 ou .m4a · máx. 100MB)</span>
+          </label>
+          <div className="flex items-center gap-3">
+            {audioName && (
+              <span className="text-xs text-[#2E2860] bg-[#2E2860]/8 px-3 py-1.5 rounded-lg truncate max-w-[200px]">🎧 {audioName}</span>
+            )}
+            <button type="button" onClick={() => audioInputRef.current?.click()} disabled={audioUploading}
+              className="px-4 py-2 border border-[#1E1B2E]/15 text-sm text-[#2E2860] rounded-xl hover:bg-[#2E2860]/5 disabled:opacity-50">
+              {audioUploading ? 'Enviando…' : audioName ? 'Trocar áudio' : 'Escolher arquivo'}
+            </button>
+            {audioUrl && (
+              <button type="button" onClick={() => { setAudioUrl(''); setAudioName('') }}
+                className="text-xs text-red-500 hover:underline">Remover</button>
+            )}
+          </div>
+          <input ref={audioInputRef} type="file" accept=".mp3,.m4a,audio/mpeg,audio/mp4,audio/x-m4a" className="hidden" onChange={handleAudioUpload} />
+        </div>
+      ) : (
+        <div>
+          <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">
+            Áudio da pregação <span className="text-[#8A8797] font-normal">(opcional · .mp3 ou .m4a · máx. 100MB)</span>
+          </label>
+          <div className="flex items-center gap-3">
+            {audioName && (
+              <span className="text-xs text-[#2E2860] bg-[#2E2860]/8 px-3 py-1.5 rounded-lg truncate max-w-[200px]">🎧 {audioName}</span>
+            )}
+            <button type="button" onClick={() => audioInputRef.current?.click()} disabled={audioUploading}
+              className="px-4 py-2 border border-[#1E1B2E]/15 text-sm text-[#2E2860] rounded-xl hover:bg-[#2E2860]/5 disabled:opacity-50">
+              {audioUploading ? 'Enviando…' : audioName ? 'Trocar áudio' : 'Escolher arquivo'}
+            </button>
+            {audioUrl && (
+              <button type="button" onClick={() => { setAudioUrl(''); setAudioName('') }}
+                className="text-xs text-red-500 hover:underline">Remover</button>
+            )}
+          </div>
+          <input ref={audioInputRef} type="file" accept=".mp3,.m4a,audio/mpeg,audio/mp4,audio/x-m4a" className="hidden" onChange={handleAudioUpload} />
+        </div>
+      )}
+
+      {/* Capa: para texto e áudio */}
+      {(contentType === 'text' || contentType === 'audio') && (
         <div>
           <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">
             Imagem de capa <span className="text-[#8A8797] font-normal">(opcional)</span>
@@ -152,48 +228,25 @@ export function EditStudyForm({ study, categories }: { study: Study; categories:
             )}
           </div>
           <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
-          <input type="hidden" name="cover_url" value={coverUrl} />
         </div>
       )}
 
-      {/* Descrição / Corpo */}
-      <div>
-        <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">
-          {isVideo ? 'Descrição' : 'Conteúdo'}
-        </label>
-        {isVideo ? (
+      {/* Body: obrigatório para texto, opcional para vídeo, oculto para áudio */}
+      {contentType === 'text' && (
+        <div>
+          <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">Conteúdo *</label>
+          <RichTextEditor name="body" initialHTML={cleanBody} />
+        </div>
+      )}
+      {contentType === 'video' && (
+        <div>
+          <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">
+            Descrição <span className="text-[#8A8797] font-normal">(opcional)</span>
+          </label>
           <textarea name="body" rows={5} defaultValue={cleanBody}
             placeholder="Descrição do vídeo..." className={`${inputCls} resize-y`} />
-        ) : (
-          <RichTextEditor name="body" initialHTML={cleanBody} />
-        )}
-      </div>
-
-      {/* Áudio da pregação (opcional) */}
-      <div>
-        <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">
-          Áudio da pregação <span className="text-[#8A8797] font-normal">(opcional · .mp3 ou .m4a · máx. 100MB)</span>
-        </label>
-        <div className="flex items-center gap-3">
-          {audioName && (
-            <span className="text-xs text-[#2E2860] bg-[#2E2860]/8 px-3 py-1.5 rounded-lg truncate max-w-[200px]">🎧 {audioName}</span>
-          )}
-          <button
-            type="button"
-            onClick={() => audioInputRef.current?.click()}
-            disabled={audioUploading}
-            className="px-4 py-2 border border-[#1E1B2E]/15 text-sm text-[#2E2860] rounded-xl hover:bg-[#2E2860]/5 disabled:opacity-50"
-          >
-            {audioUploading ? 'Enviando…' : audioName ? 'Trocar áudio' : 'Escolher arquivo'}
-          </button>
-          {audioUrl && (
-            <button type="button" onClick={() => { setAudioUrl(''); setAudioName('') }}
-              className="text-xs text-red-500 hover:underline">Remover</button>
-          )}
         </div>
-        <input ref={audioInputRef} type="file" accept=".mp3,.m4a,audio/mpeg,audio/mp4,audio/x-m4a" className="hidden" onChange={handleAudioUpload} />
-        <input type="hidden" name="audio_url" value={audioUrl} />
-      </div>
+      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">

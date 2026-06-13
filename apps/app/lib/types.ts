@@ -29,6 +29,7 @@ export interface StudyCard {
   youtube_url: string | null
   audio_url: string | null
   cover_url: string | null
+  content_type: string | null
   read_time_min: number | null
   published_at: string | null
   preachers: Preacher | null

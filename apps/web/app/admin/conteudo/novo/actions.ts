@@ -29,25 +29,25 @@ export async function createStudy(formData: FormData) {
   const youtubeUrl = formData.get('youtube_url') as string
   const body = (formData.get('body') as string) ?? ''
   const submitAction = formData.get('submit_action') as string
+  const coverUrl = (formData.get('cover_url') as string | null)?.trim() || null
+  const audioUrl = (formData.get('audio_url') as string | null)?.trim() || null
 
   if (!title?.trim()) return { error: 'Título é obrigatório' }
   if (contentType === 'video' && !youtubeUrl?.trim()) return { error: 'URL do YouTube é obrigatória para vídeos' }
   if (contentType === 'text' && htmlIsEmpty(body)) return { error: 'Conteúdo é obrigatório para estudos de texto' }
+  if (contentType === 'audio' && !audioUrl) return { error: 'Arquivo de áudio é obrigatório' }
 
   const status = submitAction === 'publish' ? 'pending' : 'draft'
   const slug = `${slugify(title)}-${Math.random().toString(36).slice(2, 6)}`
-
-  const coverUrl = (formData.get('cover_url') as string | null)?.trim() || null
-  const audioUrl = (formData.get('audio_url') as string | null)?.trim() || null
 
   const { error } = await supabase.from('studies').insert({
     title: title.trim(),
     slug,
     content_type: contentType,
-    youtube_url: contentType === 'video' ? youtubeUrl.trim() : null,
-    body: htmlIsEmpty(body) ? ' ' : body.trim(),
+    youtube_url: contentType === 'video' ? youtubeUrl?.trim() || null : null,
+    body: contentType === 'audio' ? ' ' : (htmlIsEmpty(body) ? ' ' : body.trim()),
     category_id: categoryId || null,
-    cover_url: contentType === 'text' ? coverUrl : null,
+    cover_url: contentType === 'video' ? null : coverUrl,
     audio_url: audioUrl,
     status,
   })
