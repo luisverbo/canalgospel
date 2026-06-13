@@ -14,6 +14,7 @@ interface Study {
   title: string
   body: string | null
   youtube_url: string | null
+  audio_url?: string | null
   read_time_min: number | null
   published_at: string | null
 }
@@ -127,6 +128,18 @@ export function StudyReader({
               title={decodeHtml(study.title)}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               className="w-full h-full" allowFullScreen />
+          </div>
+        )}
+
+        {study.audio_url && (
+          <div className="my-6 bg-[#2E2860]/6 dark:bg-[#2E2860]/30 rounded-2xl p-4">
+            <p className="text-xs font-semibold text-[#2E2860] dark:text-[#B5B0D8] mb-2">🎧 Áudio da pregação</p>
+            <audio
+              controls
+              src={study.audio_url}
+              className="w-full"
+              style={{ colorScheme: darkMode ? 'dark' : 'light' }}
+            />
           </div>
         )}
 

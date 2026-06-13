@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { RichTextEditor } from '../../admin/conteudo/RichTextEditor'
-import { uploadPartnerImage } from '../upload-actions'
+import { uploadPartnerImage, uploadPartnerAudio } from '../upload-actions'
 import { createPartnerStudy, updatePartnerStudy } from './actions'
 
 interface Category { id: string; name: string; kind?: string }
@@ -16,6 +16,7 @@ interface ExistingStudy {
   category_id: string | null
   content_type: string | null
   cover_url: string | null
+  audio_url: string | null
   status: string
 }
 
@@ -50,10 +51,33 @@ export function PartnerStudyForm({
   const [coverPreview, setCoverPreview] = useState(study?.cover_url ?? '')
   const [coverUploading, setCoverUploading] = useState(false)
   const coverRef = useRef<HTMLInputElement>(null)
+  const [audioUrl, setAudioUrl] = useState(study?.audio_url ?? '')
+  const [audioName, setAudioName] = useState(study?.audio_url ? study.audio_url.split('/').pop() ?? '' : '')
+  const [audioUploading, setAudioUploading] = useState(false)
+  const audioRef = useRef<HTMLInputElement>(null)
 
   const inputCls = 'w-full px-3.5 py-2.5 rounded-xl border border-[#1E1B2E]/15 bg-white text-[#1E1B2E] text-sm outline-none focus:border-[#2E2860]'
   const categoryGroups = groupByKind(categories)
   const cleanBody = study?.body && study.body.trim() !== '' && study.body.trim() !== ' ' ? study.body : ''
+
+  const handleAudio = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAudioUploading(true)
+    try {
+      const fd = new FormData()
+      fd.set('file', file)
+      const result = await uploadPartnerAudio(fd)
+      if (result.error || !result.url) throw new Error(result.error ?? 'Falha no upload')
+      setAudioUrl(result.url)
+      setAudioName(file.name)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha no upload do áudio')
+    } finally {
+      setAudioUploading(false)
+      if (audioRef.current) audioRef.current.value = ''
+    }
+  }
 
   const handleCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -81,6 +105,7 @@ export function PartnerStudyForm({
     const fd = new FormData(e.currentTarget)
     fd.set('content_type', contentType)
     fd.set('cover_url', coverUrl)
+    fd.set('audio_url', audioUrl)
     const btn = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement
     fd.set('submit_action', btn?.value ?? 'draft')
     const result = editing ? await updatePartnerStudy(study!.id, fd) : await createPartnerStudy(fd)
@@ -172,6 +197,27 @@ export function PartnerStudyForm({
           </div>
         </>
       )}
+
+      {/* Áudio da pregação (opcional) */}
+      <div>
+        <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">
+          Áudio da pregação <span className="text-[#8A8797] font-normal">(opcional · .mp3 ou .m4a · máx. 100MB)</span>
+        </label>
+        <div className="flex items-center gap-3">
+          {audioName && (
+            <span className="text-xs text-[#2E2860] bg-[#2E2860]/8 px-3 py-1.5 rounded-lg truncate max-w-[200px]">🎧 {audioName}</span>
+          )}
+          <button type="button" onClick={() => audioRef.current?.click()} disabled={audioUploading}
+            className="px-4 py-2 border border-[#1E1B2E]/15 text-sm text-[#2E2860] rounded-xl hover:bg-[#2E2860]/5 disabled:opacity-50">
+            {audioUploading ? 'Enviando…' : audioName ? 'Trocar áudio' : 'Escolher arquivo'}
+          </button>
+          {audioUrl && (
+            <button type="button" onClick={() => { setAudioUrl(''); setAudioName('') }}
+              className="text-xs text-red-500 hover:underline">Remover</button>
+          )}
+        </div>
+        <input ref={audioRef} type="file" accept=".mp3,.m4a,audio/mpeg,audio/mp4,audio/x-m4a" className="hidden" onChange={handleAudio} />
+      </div>
 
       {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{error}</div>}
 

@@ -12,6 +12,7 @@ interface StudyCardProps {
     slug: string
     body?: string | null
     youtube_url?: string | null
+    audio_url?: string | null
     cover_url?: string | null
     read_time_min?: number | null
     published_at?: string | null
@@ -52,11 +53,20 @@ export function StudyCard({ study, preacher, category }: StudyCardProps) {
       </div>
 
       <div className="flex-1 min-w-0">
-        {category && (
-          <span className="inline-block text-[10px] font-semibold text-[#2E2860] dark:text-[#B5B0D8] bg-[#EDEAF6] dark:bg-[#2E2860]/40 px-2 py-0.5 rounded-full mb-1">
-            {decodeHtml(category.name)}
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+          {category && (
+            <span className="inline-block text-[10px] font-semibold text-[#2E2860] dark:text-[#B5B0D8] bg-[#EDEAF6] dark:bg-[#2E2860]/40 px-2 py-0.5 rounded-full">
+              {decodeHtml(category.name)}
+            </span>
+          )}
+          {study.youtube_url ? (
+            <span className="inline-block text-[10px] font-semibold text-[#1E1B2E] bg-[#E0A943] px-2 py-0.5 rounded-full">▶ Vídeo</span>
+          ) : study.audio_url ? (
+            <span className="inline-block text-[10px] font-semibold text-white bg-[#2E2860] px-2 py-0.5 rounded-full">🎧 Áudio</span>
+          ) : (
+            <span className="inline-block text-[10px] font-semibold text-[#8A8797] bg-[#1E1B2E]/8 dark:bg-white/10 dark:text-white/50 px-2 py-0.5 rounded-full">📖 Texto</span>
+          )}
+        </div>
         <h3 className="font-medium text-sm text-[#1E1B2E] dark:text-[#F3F1FA] leading-snug line-clamp-2">
           {decodeHtml(study.title)}
         </h3>

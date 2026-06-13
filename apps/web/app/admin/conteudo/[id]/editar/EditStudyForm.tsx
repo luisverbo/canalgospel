@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateStudy } from './actions'
 import { RichTextEditor } from '../../RichTextEditor'
-import { uploadStudyImage } from '../../upload-actions'
+import { uploadStudyImage, uploadStudyAudio } from '../../upload-actions'
 
 interface Category { id: string; name: string; kind?: string }
 
@@ -16,6 +16,7 @@ interface Study {
   category_id: string | null
   content_type: string | null
   cover_url?: string | null
+  audio_url?: string | null
 }
 
 const kindLabel: Record<string, string> = { tema: 'Temas', livro: 'Livros Bíblicos', ocasiao: 'Ocasiões' }
@@ -38,10 +39,33 @@ export function EditStudyForm({ study, categories }: { study: Study; categories:
   const [coverPreview, setCoverPreview] = useState(study.cover_url ?? '')
   const [coverUploading, setCoverUploading] = useState(false)
   const coverInputRef = useRef<HTMLInputElement>(null)
+  const [audioUrl, setAudioUrl] = useState(study.audio_url ?? '')
+  const [audioName, setAudioName] = useState(study.audio_url ? study.audio_url.split('/').pop() ?? '' : '')
+  const [audioUploading, setAudioUploading] = useState(false)
+  const audioInputRef = useRef<HTMLInputElement>(null)
 
   const isVideo = !!study.youtube_url || study.content_type === 'video'
   const inputCls = 'w-full px-3.5 py-2.5 rounded-xl border border-[#1E1B2E]/15 bg-white text-[#1E1B2E] text-sm outline-none focus:border-[#2E2860]'
   const categoryGroups = groupByKind(categories)
+
+  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAudioUploading(true)
+    try {
+      const fd = new FormData()
+      fd.set('file', file)
+      const result = await uploadStudyAudio(fd)
+      if (result.error || !result.url) throw new Error(result.error ?? 'Falha no upload')
+      setAudioUrl(result.url)
+      setAudioName(file.name)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha no upload do áudio')
+    } finally {
+      setAudioUploading(false)
+      if (audioInputRef.current) audioInputRef.current.value = ''
+    }
+  }
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -143,6 +167,32 @@ export function EditStudyForm({ study, categories }: { study: Study; categories:
         ) : (
           <RichTextEditor name="body" initialHTML={cleanBody} />
         )}
+      </div>
+
+      {/* Áudio da pregação (opcional) */}
+      <div>
+        <label className="block text-sm font-medium text-[#1E1B2E] mb-1.5">
+          Áudio da pregação <span className="text-[#8A8797] font-normal">(opcional · .mp3 ou .m4a · máx. 100MB)</span>
+        </label>
+        <div className="flex items-center gap-3">
+          {audioName && (
+            <span className="text-xs text-[#2E2860] bg-[#2E2860]/8 px-3 py-1.5 rounded-lg truncate max-w-[200px]">🎧 {audioName}</span>
+          )}
+          <button
+            type="button"
+            onClick={() => audioInputRef.current?.click()}
+            disabled={audioUploading}
+            className="px-4 py-2 border border-[#1E1B2E]/15 text-sm text-[#2E2860] rounded-xl hover:bg-[#2E2860]/5 disabled:opacity-50"
+          >
+            {audioUploading ? 'Enviando…' : audioName ? 'Trocar áudio' : 'Escolher arquivo'}
+          </button>
+          {audioUrl && (
+            <button type="button" onClick={() => { setAudioUrl(''); setAudioName('') }}
+              className="text-xs text-red-500 hover:underline">Remover</button>
+          )}
+        </div>
+        <input ref={audioInputRef} type="file" accept=".mp3,.m4a,audio/mpeg,audio/mp4,audio/x-m4a" className="hidden" onChange={handleAudioUpload} />
+        <input type="hidden" name="audio_url" value={audioUrl} />
       </div>
 
       {error && (

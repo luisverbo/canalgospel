@@ -27,6 +27,7 @@ export interface StudyCard {
   slug: string
   body: string | null
   youtube_url: string | null
+  audio_url: string | null
   cover_url: string | null
   read_time_min: number | null
   published_at: string | null

@@ -68,6 +68,7 @@ export async function createPartnerStudy(formData: FormData) {
   const youtubeUrl = (formData.get('youtube_url') as string)?.trim()
   const body = (formData.get('body') as string) ?? ''
   const coverUrl = (formData.get('cover_url') as string | null)?.trim() || null
+  const audioUrl = (formData.get('audio_url') as string | null)?.trim() || null
   const submitAction = formData.get('submit_action') as string
 
   if (!title) return { error: 'Título é obrigatório' }
@@ -97,6 +98,7 @@ export async function createPartnerStudy(formData: FormData) {
     youtube_url: contentType === 'video' ? youtubeUrl : null,
     body: htmlIsEmpty(body) ? ' ' : body.trim(),
     cover_url: contentType === 'text' ? coverUrl : null,
+    audio_url: audioUrl,
     status,
     published_at: publishedAt,
   })
@@ -127,6 +129,7 @@ export async function updatePartnerStudy(studyId: string, formData: FormData) {
   const youtubeUrl = (formData.get('youtube_url') as string)?.trim()
   const body = (formData.get('body') as string) ?? ''
   const coverUrl = (formData.get('cover_url') as string | null)?.trim() || null
+  const audioUrl = (formData.get('audio_url') as string | null)?.trim() || null
   const submitAction = formData.get('submit_action') as string
 
   if (!title) return { error: 'Título é obrigatório' }
@@ -153,6 +156,7 @@ export async function updatePartnerStudy(studyId: string, formData: FormData) {
     youtube_url: contentType === 'video' ? youtubeUrl || null : null,
     body: htmlIsEmpty(body) ? ' ' : body.trim(),
     cover_url: contentType === 'text' ? coverUrl : null,
+    audio_url: audioUrl,
     status,
   }
   if (publishedAt !== undefined) update.published_at = publishedAt

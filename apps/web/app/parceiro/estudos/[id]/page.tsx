@@ -25,7 +25,7 @@ export default async function EditarEstudoParceiroPage({
   const [{ data: study }, { data: categories }] = await Promise.all([
     supabase
       .from('studies')
-      .select('id, title, body, youtube_url, category_id, content_type, cover_url, status, preacher_id')
+      .select('id, title, body, youtube_url, category_id, content_type, cover_url, audio_url, status, preacher_id')
       .eq('id', id)
       .maybeSingle(),
     supabase.from('categories').select('id, name, kind').order('name'),

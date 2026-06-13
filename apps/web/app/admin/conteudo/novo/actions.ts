@@ -38,6 +38,7 @@ export async function createStudy(formData: FormData) {
   const slug = `${slugify(title)}-${Math.random().toString(36).slice(2, 6)}`
 
   const coverUrl = (formData.get('cover_url') as string | null)?.trim() || null
+  const audioUrl = (formData.get('audio_url') as string | null)?.trim() || null
 
   const { error } = await supabase.from('studies').insert({
     title: title.trim(),
@@ -47,6 +48,7 @@ export async function createStudy(formData: FormData) {
     body: htmlIsEmpty(body) ? ' ' : body.trim(),
     category_id: categoryId || null,
     cover_url: contentType === 'text' ? coverUrl : null,
+    audio_url: audioUrl,
     status,
   })
 
