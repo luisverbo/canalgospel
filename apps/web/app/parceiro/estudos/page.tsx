@@ -2,6 +2,7 @@ import { createServerSupabaseClient, createAdminSupabaseClient } from '@/lib/sup
 import { Badge } from '@canal-gospel/ui'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { PartnerStudyDeleteButton } from './PartnerStudyDeleteButton'
 
 const statusLabel: Record<string, string> = {
   draft: 'Rascunho',
@@ -84,9 +85,12 @@ export default async function ParceiroEstudosPage() {
                     </Badge>
                   </td>
                   <td className="px-5 py-4">
-                    <Link href={`/parceiro/estudos/${study.id}`} className="text-xs font-medium text-[#2E2860] hover:underline">
-                      Editar
-                    </Link>
+                    <div className="flex items-center gap-3">
+                      <Link href={`/parceiro/estudos/${study.id}`} className="text-xs font-medium text-[#2E2860] hover:underline">
+                        Editar
+                      </Link>
+                      <PartnerStudyDeleteButton studyId={study.id} title={study.title} />
+                    </div>
                   </td>
                 </tr>
               )

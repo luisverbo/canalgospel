@@ -4,6 +4,45 @@ import { requirePartner } from '@/lib/supabase/partner-guard'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+const STORAGE_BUCKET = 'content'
+
+function storagePathFromUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  try {
+    const marker = `/storage/v1/object/public/${STORAGE_BUCKET}/`
+    const idx = url.indexOf(marker)
+    if (idx === -1) return null
+    return decodeURIComponent(url.slice(idx + marker.length))
+  } catch { return null }
+}
+
+export async function deletePartnerStudy(studyId: string) {
+  const { supabase, preacher } = await requirePartner()
+
+  // Ownership check — only own studies
+  const { data: study } = await supabase
+    .from('studies')
+    .select('preacher_id, cover_url')
+    .eq('id', studyId)
+    .single()
+
+  if (!study || study.preacher_id !== preacher.id) {
+    return { error: 'Estudo não encontrado ou sem permissão.' }
+  }
+
+  // Remove storage file if present
+  const storagePath = storagePathFromUrl(study.cover_url)
+  if (storagePath) {
+    await supabase.storage.from(STORAGE_BUCKET).remove([storagePath])
+  }
+
+  const { error } = await supabase.from('studies').delete().eq('id', studyId)
+  if (error) return { error: error.message }
+
+  revalidatePath('/parceiro/estudos')
+  return {}
+}
+
 function htmlIsEmpty(html: string): boolean {
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() === ''
 }

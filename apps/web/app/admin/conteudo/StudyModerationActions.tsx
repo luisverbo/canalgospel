@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { approveStudy, rejectStudy, unpublishStudy, setCategoryAction, setFeatured, unsetFeatured } from './actions'
+import { useRouter } from 'next/navigation'
+import { approveStudy, rejectStudy, unpublishStudy, setCategoryAction, setFeatured, unsetFeatured, deleteStudy } from './actions'
 
 interface Category { id: string; name: string }
 
@@ -20,8 +21,19 @@ export function StudyModerationActions({
   isFeatured?: boolean
   featuredUntil?: string | null
 }) {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [rejecting, setRejecting] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    if (!confirm(`Excluir permanentemente "${studyId.slice(0, 8)}…"? Esta ação não pode ser desfeita.`)) return
+    setDeleting(true)
+    const res = await deleteStudy(studyId)
+    setDeleting(false)
+    if (res?.error) { alert(`Erro ao excluir: ${res.error}`); return }
+    router.refresh()
+  }
   const [selectedCategory, setSelectedCategory] = useState(categoryId ?? '')
   const [featured, setFeaturedState] = useState(isFeatured)
   const [featuringOpen, setFeaturingOpen] = useState(false)
@@ -121,6 +133,17 @@ export function StudyModerationActions({
       {currentStatus === 'draft' && (
         <span className="text-xs text-[#8A8797] py-2">Rascunho</span>
       )}
+
+      {/* Excluir — sempre visível, com confirmação */}
+      <div className="border-t border-[#1E1B2E]/8 pt-3 mt-1">
+        <button
+          onClick={handleDelete}
+          disabled={deleting || loading}
+          className="px-3 py-1.5 text-xs text-red-600 border border-red-100 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
+        >
+          {deleting ? 'Excluindo…' : 'Excluir estudo'}
+        </button>
+      </div>
 
       {/* Destaque na Home — apenas para estudos publicados */}
       {currentStatus === 'published' && (
