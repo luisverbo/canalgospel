@@ -55,7 +55,7 @@ export function StudyReader({
     if (navigator.share) await navigator.share({ title: decodeHtml(study.title), url: window.location.href })
   }
 
-  const isAudio = study.content_type === 'audio'
+  const isAudio = study.content_type === 'audio' || (!!study.audio_url && !study.youtube_url)
 
   return (
     <div className="min-h-screen bg-[#FAF7F1] dark:bg-[#17141F] text-[#1E1B2E] dark:text-[#D8D5E4]">

@@ -62,7 +62,7 @@ export function StudyCard({ study, preacher, category }: StudyCardProps) {
           )}
           {(study.content_type === 'video' || !!study.youtube_url) ? (
             <span className="inline-block text-[10px] font-semibold text-[#1E1B2E] bg-[#E0A943] px-2 py-0.5 rounded-full">▶ Vídeo</span>
-          ) : (study.content_type === 'audio' || !!study.audio_url) ? (
+          ) : (study.content_type === 'audio' || (!!study.audio_url && !study.youtube_url)) ? (
             <span className="inline-block text-[10px] font-semibold text-white bg-[#2E2860] px-2 py-0.5 rounded-full">🎧 Áudio</span>
           ) : (
             <span className="inline-block text-[10px] font-semibold text-[#8A8797] bg-[#1E1B2E]/8 dark:bg-white/10 dark:text-white/50 px-2 py-0.5 rounded-full">📖 Texto</span>
