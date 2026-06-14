@@ -110,10 +110,9 @@ jobs:
         working-directory: apps/app
         run: npx @capacitor/cli sync android
 
-      # ── Patch build.gradle — signing config ─────────────────────────
-      # Injects a signingConfigs.release block (reads env vars at build time).
-      # Only affects the release buildType; debug is unchanged.
-      - name: Patch build.gradle — signing config
+      # ── Patch build.gradle — version + signing config ───────────────
+      # Injects versionCode/versionName and signingConfigs.release block.
+      - name: Patch build.gradle — version + signing config
         working-directory: apps/app
         run: |
           python3 - <<'PYEOF'
@@ -121,6 +120,11 @@ jobs:
 
           path = 'android/app/build.gradle'
           text = open(path).read()
+
+          # Bump version
+          import re as _re
+          text = _re.sub(r'versionCode\s+\d+', 'versionCode 2', text)
+          text = _re.sub(r'versionName\s+"[^"]+"', 'versionName "1.1"', text)
 
           signing_block = """
               signingConfigs {
