@@ -25,7 +25,7 @@ export default function HomePage() {
     const supabase = createClient()
     const today = new Date().toISOString().split('T')[0]
     const nowIso = new Date().toISOString()
-    const studyCols = 'id, title, slug, body, youtube_url, cover_url, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)'
+    const studyCols = 'id, title, slug, body, youtube_url, audio_url, cover_url, content_type, read_time_min, published_at, preachers(display_name, slug, photo_url), categories(name, slug)'
 
     Promise.all([
       supabase
