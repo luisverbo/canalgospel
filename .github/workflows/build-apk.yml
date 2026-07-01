@@ -123,8 +123,8 @@ jobs:
 
           # Bump version
           import re as _re
-          text = _re.sub(r'versionCode\s+\d+', 'versionCode 2', text)
-          text = _re.sub(r'versionName\s+"[^"]+"', 'versionName "1.1"', text)
+          text = _re.sub(r'versionCode\s+\d+', 'versionCode 3', text)
+          text = _re.sub(r'versionName\s+"[^"]+"', 'versionName "1.2"', text)
 
           signing_block = """
               signingConfigs {
