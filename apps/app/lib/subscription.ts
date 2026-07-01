@@ -1,14 +1,9 @@
-const KEY = 'cg_subscriber'
 const DEVICE_KEY = 'cg_device_id'
 
+// Fase 1: sem assinatura ativa até o RevenueCat ser implementado (Fase 2).
+// getIsSubscriber sempre retorna false — não há ativação manual.
 export function getIsSubscriber(): boolean {
-  if (typeof window === 'undefined') return false
-  try { return localStorage.getItem(KEY) === 'true' } catch { return false }
-}
-
-export function setIsSubscriber(v: boolean): void {
-  if (typeof window === 'undefined') return
-  try { localStorage.setItem(KEY, v ? 'true' : 'false') } catch { /* ignore */ }
+  return false
 }
 
 export function getDeviceId(): string {
