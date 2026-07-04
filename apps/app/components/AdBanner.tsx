@@ -5,13 +5,17 @@ import { Capacitor } from '@capacitor/core'
 import { fetchActiveCampaigns, pickCampaign, recordImpression, recordClick, shouldShowAds } from '@/lib/ads'
 import type { AdCampaign } from '@/lib/ads'
 
+// Anúncios de teste apenas quando NEXT_PUBLIC_ADMOB_TESTING === 'true'.
+// Em produção (flag ausente/false) exibe anúncios reais.
+const AD_TESTING = process.env.NEXT_PUBLIC_ADMOB_TESTING === 'true'
+
 let admobInitialized = false
 
 async function initAdMob() {
   if (admobInitialized) return
   try {
     const { AdMob } = await import('@capacitor-community/admob')
-    await AdMob.initialize({ initializeForTesting: true })
+    await AdMob.initialize({ initializeForTesting: AD_TESTING })
     admobInitialized = true
   } catch { /* plugin unavailable — safe to ignore */ }
 }
@@ -26,7 +30,7 @@ async function showAdMobBanner() {
       adSize: BannerAdSize.ADAPTIVE_BANNER,
       position: BannerAdPosition.BOTTOM_CENTER,
       margin: 56,
-      isTesting: true,
+      isTesting: AD_TESTING,
     })
   } catch { /* AdMob unavailable or no fill — not fatal */ }
 }

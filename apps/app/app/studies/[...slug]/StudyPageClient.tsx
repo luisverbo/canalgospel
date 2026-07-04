@@ -52,7 +52,7 @@ export function StudyPageClient() {
                 const { AdMob } = await import('@capacitor-community/admob')
                 const adId = process.env.NEXT_PUBLIC_ADMOB_INTERSTITIAL_ID
                   ?? 'ca-app-pub-3940256099942544/1033173712'
-                await AdMob.prepareInterstitial({ adId, isTesting: true })
+                await AdMob.prepareInterstitial({ adId, isTesting: process.env.NEXT_PUBLIC_ADMOB_TESTING === 'true' })
                 await AdMob.showInterstitial()
               } catch { /* AdMob unavailable or no fill — not fatal */ }
             })()
